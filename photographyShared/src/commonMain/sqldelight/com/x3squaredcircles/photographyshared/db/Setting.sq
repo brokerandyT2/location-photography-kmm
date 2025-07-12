@@ -1,0 +1,57 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Setting.sq
+
+selectAll:
+SELECT * FROM Setting
+ORDER BY key ASC;
+
+selectById:
+SELECT * FROM Setting
+WHERE id = ?;
+
+selectByKey:
+SELECT * FROM Setting
+WHERE key = ?;
+
+selectByKeys:
+SELECT * FROM Setting
+WHERE key IN ?;
+
+selectAllAsDictionary:
+SELECT key, value FROM Setting;
+
+insert:
+INSERT INTO Setting (key, value, description, timestamp)
+VALUES (?, ?, ?, ?);
+
+update:
+UPDATE Setting
+SET value = ?, description = ?, timestamp = ?
+WHERE id = ?;
+
+updateByKey:
+UPDATE Setting
+SET value = ?, description = ?, timestamp = ?
+WHERE key = ?;
+
+upsert:
+INSERT OR REPLACE INTO Setting (
+  id, key, value, description, timestamp
+) VALUES (
+  (SELECT id FROM Setting WHERE key = ?),
+  ?, ?, ?, ?
+);
+
+deleteById:
+DELETE FROM Setting
+WHERE id = ?;
+
+deleteByKey:
+DELETE FROM Setting
+WHERE key = ?;
+
+existsByKey:
+SELECT COUNT(*) > 0 FROM Setting
+WHERE key = ?;
+
+getCount:
+SELECT COUNT(*) FROM Setting;

@@ -1,0 +1,160 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Location.sq
+
+-- Get all locations
+selectAll:
+SELECT * FROM Location
+ORDER BY createdAt DESC;
+
+-- Get location by ID
+selectById:
+SELECT * FROM Location
+WHERE id = ?;
+
+-- Get all active (non-deleted) locations
+selectActive:
+SELECT * FROM Location
+WHERE isDeleted = 0
+ORDER BY createdAt DESC;
+
+-- Get location by title
+selectByTitle:
+SELECT * FROM Location
+WHERE title = ?;
+
+-- Get locations with paging
+selectPaged:
+SELECT * FROM Location
+WHERE (:includeDeleted = 1 OR isDeleted = 0)
+  AND (:searchTerm IS NULL OR title LIKE '%' || :searchTerm || '%' OR description LIKE '%' || :searchTerm || '%')
+ORDER BY createdAt DESC
+LIMIT :limit OFFSET :offset;
+
+-- Get total count for paging
+selectCount:
+SELECT COUNT(*) FROM Location
+WHERE (:includeDeleted = 1 OR isDeleted = 0)
+  AND (:searchTerm IS NULL OR title LIKE '%' || :searchTerm || '%' OR description LIKE '%' || :searchTerm || '%');
+
+-- Get locations within distance (basic bounding box - more efficient than full distance calculation)
+selectNearby:
+SELECT * FROM Location
+WHERE isDeleted = 0
+  AND latitude BETWEEN :minLat AND :maxLat
+  AND longitude BETWEEN :minLon AND :maxLon
+ORDER BY 
+  ((latitude - :centerLat) * (latitude - :centerLat) + 
+   (longitude - :centerLon) * (longitude - :centerLon)) ASC;
+
+-- Search locations by text
+searchByText:
+SELECT * FROM Location
+WHERE (:includeDeleted = 1 OR isDeleted = 0)
+  AND (title LIKE '%' || :searchTerm || '%' OR description LIKE '%' || :searchTerm || '%')
+ORDER BY 
+  CASE 
+    WHEN title LIKE :searchTerm || '%' THEN 1
+    WHEN title LIKE '%' || :searchTerm || '%' THEN 2
+    ELSE 3
+  END,
+  createdAt DESC;
+
+-- Check if location exists by ID
+existsById:
+SELECT COUNT(*) > 0 FROM Location
+WHERE id = ?;
+
+-- Check if location exists by title
+existsByTitle:
+SELECT COUNT(*) > 0 FROM Location
+WHERE title = ? AND id != :excludeId;
+
+-- Insert new location
+insert:
+INSERT INTO Location (title, description, latitude, longitude, photoPath, isDeleted, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, 0, ?, ?);
+
+-- Update existing location
+update:
+UPDATE Location
+SET title = ?, 
+    description = ?, 
+    latitude = ?, 
+    longitude = ?, 
+    photoPath = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+-- Soft delete location
+softDelete:
+UPDATE Location
+SET isDeleted = 1, updatedAt = ?
+WHERE id = ?;
+
+-- Hard delete location (rarely used)
+hardDelete:
+DELETE FROM Location
+WHERE id = ?;
+
+-- Restore deleted location
+restore:
+UPDATE Location
+SET isDeleted = 0, updatedAt = ?
+WHERE id = ?;
+
+-- Update coordinates only
+updateCoordinates:
+UPDATE Location
+SET latitude = ?, longitude = ?, updatedAt = ?
+WHERE id = ?;
+
+-- Update photo path only
+updatePhotoPath:
+UPDATE Location
+SET photoPath = ?, updatedAt = ?
+WHERE id = ?;
+
+-- Get locations by coordinate range (for map view)
+selectByBounds:
+SELECT * FROM Location
+WHERE isDeleted = 0
+  AND latitude BETWEEN :southLat AND :northLat
+  AND longitude BETWEEN :westLon AND :eastLon
+ORDER BY createdAt DESC;
+
+-- Get recently created locations
+selectRecent:
+SELECT * FROM Location
+WHERE isDeleted = 0
+  AND createdAt > ?
+ORDER BY createdAt DESC
+LIMIT ?;
+
+-- Get locations modified since timestamp (for sync)
+selectModifiedSince:
+SELECT * FROM Location
+WHERE updatedAt > ?
+ORDER BY updatedAt DESC;
+
+-- Get random location (for discover feature)
+selectRandom:
+SELECT * FROM Location
+WHERE isDeleted = 0
+ORDER BY RANDOM()
+LIMIT 1;
+
+-- Get location statistics
+selectStats:
+SELECT 
+  COUNT(*) as totalCount,
+  COUNT(CASE WHEN isDeleted = 0 THEN 1 END) as activeCount,
+  COUNT(CASE WHEN isDeleted = 1 THEN 1 END) as deletedCount,
+  COUNT(CASE WHEN photoPath IS NOT NULL THEN 1 END) as withPhotosCount,
+  MIN(createdAt) as oldestCreatedAt,
+  MAX(createdAt) as newestCreatedAt
+FROM Location;
+
+-- Clean up old deleted locations (for maintenance)
+cleanupDeleted:
+DELETE FROM Location
+WHERE isDeleted = 1 
+  AND updatedAt < ?;

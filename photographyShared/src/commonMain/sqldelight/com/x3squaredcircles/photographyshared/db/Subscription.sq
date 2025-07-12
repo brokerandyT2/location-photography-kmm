@@ -1,0 +1,71 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Subscription.sq
+
+selectAll:
+SELECT * FROM Subscription
+ORDER BY purchaseDate DESC;
+
+selectById:
+SELECT * FROM Subscription
+WHERE id = ?;
+
+selectActiveByUserId:
+SELECT * FROM Subscription
+WHERE userId = ? 
+  AND isActive = 1
+  AND expirationDate > ?
+ORDER BY expirationDate DESC
+LIMIT 1;
+
+selectByTransactionId:
+SELECT * FROM Subscription
+WHERE transactionId = ?;
+
+selectByPurchaseToken:
+SELECT * FROM Subscription
+WHERE purchaseToken = ?;
+
+selectExpired:
+SELECT * FROM Subscription
+WHERE expirationDate < ?
+  AND isActive = 1
+ORDER BY expirationDate ASC;
+
+selectByUserId:
+SELECT * FROM Subscription
+WHERE userId = ?
+ORDER BY purchaseDate DESC;
+
+insert:
+INSERT INTO Subscription (userId, transactionId, purchaseToken, productId, isActive, expirationDate, purchaseDate, lastVerified)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+update:
+UPDATE Subscription
+SET userId = ?, transactionId = ?, purchaseToken = ?, productId = ?, isActive = ?, expirationDate = ?, lastVerified = ?
+WHERE id = ?;
+
+updateStatus:
+UPDATE Subscription
+SET isActive = ?, lastVerified = ?
+WHERE id = ?;
+
+deactivate:
+UPDATE Subscription
+SET isActive = 0, lastVerified = ?
+WHERE id = ?;
+
+deactivateExpired:
+UPDATE Subscription
+SET isActive = 0, lastVerified = ?
+WHERE expirationDate < ? AND isActive = 1;
+
+deleteById:
+DELETE FROM Subscription
+WHERE id = ?;
+
+getCount:
+SELECT COUNT(*) FROM Subscription;
+
+getActiveCount:
+SELECT COUNT(*) FROM Subscription
+WHERE isActive = 1 AND expirationDate > ?;

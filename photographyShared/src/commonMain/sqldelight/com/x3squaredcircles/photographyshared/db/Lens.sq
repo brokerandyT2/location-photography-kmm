@@ -1,0 +1,63 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Lens.sq
+
+selectAll:
+SELECT * FROM Lens
+ORDER BY isUserCreated DESC, minMM ASC;
+
+selectById:
+SELECT * FROM Lens
+WHERE id = ?;
+
+selectPaged:
+SELECT * FROM Lens
+ORDER BY isUserCreated DESC, minMM ASC
+LIMIT ? OFFSET ?;
+
+selectUserCreated:
+SELECT * FROM Lens
+WHERE isUserCreated = 1
+ORDER BY dateAdded DESC;
+
+selectByFocalLengthRange:
+SELECT * FROM Lens
+WHERE minMM <= ? AND maxMM >= ?
+ORDER BY isUserCreated DESC, minMM ASC;
+
+selectCompatibleLenses:
+SELECT l.*
+FROM Lens l
+INNER JOIN LensCameraCompatibility lcc ON l.id = lcc.lensId
+WHERE lcc.cameraBodyId = ?
+ORDER BY l.isUserCreated DESC, l.minMM ASC;
+
+selectPrimes:
+SELECT * FROM Lens
+WHERE isPrime = 1
+ORDER BY isUserCreated DESC, minMM ASC;
+
+selectZooms:
+SELECT * FROM Lens
+WHERE isPrime = 0
+ORDER BY isUserCreated DESC, minMM ASC;
+
+insert:
+INSERT INTO Lens (minMM, maxMM, minFStop, maxFStop, isPrime, isUserCreated, nameForLens, dateAdded)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+update:
+UPDATE Lens
+SET minMM = ?, maxMM = ?, minFStop = ?, maxFStop = ?, isPrime = ?, nameForLens = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM Lens
+WHERE id = ?;
+
+getTotalCount:
+SELECT COUNT(*) FROM Lens;
+
+getCountByType:
+SELECT 
+  COUNT(CASE WHEN isPrime = 1 THEN 1 END) as primeCount,
+  COUNT(CASE WHEN isPrime = 0 THEN 1 END) as zoomCount
+FROM Lens;

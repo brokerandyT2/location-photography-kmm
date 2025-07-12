@@ -1,0 +1,126 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Weather.sq
+
+selectAll:
+SELECT * FROM Weather
+ORDER BY lastUpdate DESC;
+
+selectById:
+SELECT * FROM Weather
+WHERE id = ?;
+
+selectByLocationId:
+SELECT * FROM Weather
+WHERE locationId = ?
+ORDER BY lastUpdate DESC
+LIMIT 1;
+
+selectByCoordinates:
+SELECT * FROM Weather
+WHERE latitude = ? AND longitude = ?
+ORDER BY lastUpdate DESC
+LIMIT 1;
+
+selectRecent:
+SELECT * FROM Weather
+WHERE isDeleted = 0
+ORDER BY lastUpdate DESC
+LIMIT ?;
+
+selectExpired:
+SELECT * FROM Weather
+WHERE lastUpdate < ?
+  AND isDeleted = 0
+ORDER BY lastUpdate ASC;
+
+selectByLocationAndTimeRange:
+SELECT * FROM Weather
+WHERE locationId = ?
+  AND lastUpdate BETWEEN ? AND ?
+  AND isDeleted = 0
+ORDER BY lastUpdate DESC;
+
+selectNearby:
+SELECT * FROM Weather
+WHERE isDeleted = 0
+  AND latitude BETWEEN :minLat AND :maxLat
+  AND longitude BETWEEN :minLon AND :maxLon
+ORDER BY lastUpdate DESC;
+
+selectFreshForLocation:
+SELECT * FROM Weather
+WHERE locationId = ?
+  AND lastUpdate > ?
+  AND isDeleted = 0
+ORDER BY lastUpdate DESC
+LIMIT 1;
+
+selectFreshForCoordinates:
+SELECT * FROM Weather
+WHERE latitude = ? AND longitude = ?
+  AND lastUpdate > ?
+  AND isDeleted = 0
+ORDER BY lastUpdate DESC
+LIMIT 1;
+
+insert:
+INSERT INTO Weather (locationId, latitude, longitude, timezone, timezoneOffset, lastUpdate, isDeleted)
+VALUES (?, ?, ?, ?, ?, ?, 0);
+
+update:
+UPDATE Weather
+SET locationId = ?, latitude = ?, longitude = ?, timezone = ?, timezoneOffset = ?, lastUpdate = ?
+WHERE id = ?;
+
+upsertByLocation:
+INSERT OR REPLACE INTO Weather (
+  id, locationId, latitude, longitude, timezone, timezoneOffset, lastUpdate, isDeleted
+) VALUES (
+  (SELECT id FROM Weather WHERE locationId = ? LIMIT 1),
+  ?, ?, ?, ?, ?, ?, 0
+);
+
+upsertByCoordinates:
+INSERT OR REPLACE INTO Weather (
+  id, locationId, latitude, longitude, timezone, timezoneOffset, lastUpdate, isDeleted
+) VALUES (
+  (SELECT id FROM Weather WHERE latitude = ? AND longitude = ? LIMIT 1),
+  ?, ?, ?, ?, ?, ?, 0
+);
+
+softDelete:
+UPDATE Weather
+SET isDeleted = 1
+WHERE id = ?;
+
+deleteById:
+DELETE FROM Weather
+WHERE id = ?;
+
+deleteExpired:
+DELETE FROM Weather
+WHERE lastUpdate < ?;
+
+deleteByLocation:
+DELETE FROM Weather
+WHERE locationId = ?;
+
+getCount:
+SELECT COUNT(*) FROM Weather
+WHERE isDeleted = 0;
+
+hasFreshData:
+SELECT COUNT(*) > 0 FROM Weather
+WHERE locationId = ?
+  AND lastUpdate > ?
+  AND isDeleted = 0;
+
+hasFreshDataForCoordinates:
+SELECT COUNT(*) > 0 FROM Weather
+WHERE latitude = ? AND longitude = ?
+  AND lastUpdate > ?
+  AND isDeleted = 0;
+
+cleanupExpired:
+DELETE FROM Weather
+WHERE lastUpdate < ?
+  AND isDeleted = 0;

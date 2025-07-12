@@ -1,0 +1,126 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/HourlyForecast.sq
+
+selectAll:
+SELECT * FROM HourlyForecast
+ORDER BY forecastTime ASC;
+
+selectById:
+SELECT * FROM HourlyForecast
+WHERE id = ?;
+
+selectByWeatherId:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+ORDER BY forecastTime ASC;
+
+selectByWeatherAndTimeRange:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?
+ORDER BY forecastTime ASC;
+
+selectNext24Hours:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?
+ORDER BY forecastTime ASC
+LIMIT 24;
+
+selectNext7Days:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?
+ORDER BY forecastTime ASC;
+
+selectForDay:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?
+ORDER BY forecastTime ASC;
+
+selectBestConditionsInRange:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?
+  AND cloudCover IS NOT NULL
+  AND precipitationChance IS NOT NULL
+ORDER BY 
+  precipitationChance ASC,
+  cloudCover ASC,
+  forecastTime ASC
+LIMIT ?;
+
+selectGoldenHours:
+SELECT * FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?
+  AND cloudCover IS NOT NULL
+  AND cloudCover < 70
+ORDER BY forecastTime ASC;
+
+-- Get hourly forecasts by location (joins with Weather table)
+selectByLocationId:
+SELECT hf.*
+FROM HourlyForecast hf
+INNER JOIN Weather w ON hf.weatherId = w.id
+WHERE w.locationId = ?
+  AND w.isDeleted = 0
+ORDER BY hf.forecastTime ASC;
+
+selectByLocationAndTimeRange:
+SELECT hf.*
+FROM HourlyForecast hf
+INNER JOIN Weather w ON hf.weatherId = w.id
+WHERE w.locationId = ?
+  AND w.isDeleted = 0
+  AND hf.forecastTime BETWEEN ? AND ?
+ORDER BY hf.forecastTime ASC;
+
+insert:
+INSERT INTO HourlyForecast (
+  weatherId, forecastTime, temperature, feelsLike, humidity, pressure,
+  visibility, uvIndex, windSpeed, windDirection, windGust, cloudCover,
+  precipitationChance, precipitationAmount, condition, description, icon
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertBatch:
+INSERT INTO HourlyForecast (
+  weatherId, forecastTime, temperature, feelsLike, humidity, pressure,
+  visibility, uvIndex, windSpeed, windDirection, windGust, cloudCover,
+  precipitationChance, precipitationAmount, condition, description, icon
+) VALUES ?;
+
+update:
+UPDATE HourlyForecast
+SET temperature = ?, feelsLike = ?, humidity = ?, pressure = ?, visibility = ?,
+    uvIndex = ?, windSpeed = ?, windDirection = ?, windGust = ?, cloudCover = ?,
+    precipitationChance = ?, precipitationAmount = ?, condition = ?, description = ?, icon = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM HourlyForecast
+WHERE id = ?;
+
+deleteByWeatherId:
+DELETE FROM HourlyForecast
+WHERE weatherId = ?;
+
+deleteOlderThan:
+DELETE FROM HourlyForecast
+WHERE forecastTime < ?;
+
+deleteByWeatherAndTimeRange:
+DELETE FROM HourlyForecast
+WHERE weatherId = ?
+  AND forecastTime BETWEEN ? AND ?;
+
+getCount:
+SELECT COUNT(*) FROM HourlyForecast;
+
+getCountByWeather:
+SELECT COUNT(*) FROM HourlyForecast
+WHERE weatherId = ?;
+
+existsForWeatherAndTime:
+SELECT COUNT(*) > 0 FROM HourlyForecast
+WHERE weatherId = ? AND forecastTime = ?;

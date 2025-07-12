@@ -1,0 +1,50 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/LensCameraCompatibility.sq
+
+selectAll:
+SELECT * FROM LensCameraCompatibility
+ORDER BY dateAdded DESC;
+
+selectById:
+SELECT * FROM LensCameraCompatibility
+WHERE id = ?;
+
+selectByLensId:
+SELECT * FROM LensCameraCompatibility
+WHERE lensId = ?
+ORDER BY dateAdded DESC;
+
+selectByCameraId:
+SELECT * FROM LensCameraCompatibility
+WHERE cameraBodyId = ?
+ORDER BY dateAdded DESC;
+
+insert:
+INSERT INTO LensCameraCompatibility (lensId, cameraBodyId, dateAdded)
+VALUES (?, ?, ?);
+
+insertBatch:
+INSERT INTO LensCameraCompatibility (lensId, cameraBodyId, dateAdded)
+VALUES ?;
+
+deleteById:
+DELETE FROM LensCameraCompatibility
+WHERE id = ?;
+
+deleteByLensAndCamera:
+DELETE FROM LensCameraCompatibility
+WHERE lensId = ? AND cameraBodyId = ?;
+
+deleteByLensId:
+DELETE FROM LensCameraCompatibility
+WHERE lensId = ?;
+
+deleteByCameraId:
+DELETE FROM LensCameraCompatibility
+WHERE cameraBodyId = ?;
+
+exists:
+SELECT COUNT(*) > 0 FROM LensCameraCompatibility
+WHERE lensId = ? AND cameraBodyId = ?;
+
+getCount:
+SELECT COUNT(*) FROM LensCameraCompatibility;

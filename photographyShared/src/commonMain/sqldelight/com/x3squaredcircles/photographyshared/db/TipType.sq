@@ -1,0 +1,42 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/TipType.sq
+
+selectAll:
+SELECT * FROM TipType
+ORDER BY name ASC;
+
+selectById:
+SELECT * FROM TipType
+WHERE id = ?;
+
+selectByName:
+SELECT * FROM TipType
+WHERE name = ?;
+
+selectWithTips:
+SELECT 
+  tt.*,
+  COUNT(t.id) as tipCount
+FROM TipType tt
+LEFT JOIN Tip t ON tt.id = t.tipTypeId
+GROUP BY tt.id, tt.name, tt.i8n
+ORDER BY tt.name ASC;
+
+insert:
+INSERT INTO TipType (name, i8n)
+VALUES (?, ?);
+
+update:
+UPDATE TipType
+SET name = ?, i8n = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM TipType
+WHERE id = ?;
+
+existsByName:
+SELECT COUNT(*) > 0 FROM TipType
+WHERE name = ? AND id != :excludeId;
+
+getCount:
+SELECT COUNT(*) FROM TipType;

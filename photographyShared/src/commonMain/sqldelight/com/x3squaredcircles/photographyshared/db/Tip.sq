@@ -1,0 +1,65 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Tip.sq
+
+selectAll:
+SELECT * FROM Tip
+ORDER BY title ASC;
+
+selectById:
+SELECT * FROM Tip
+WHERE id = ?;
+
+selectByTypeId:
+SELECT * FROM Tip
+WHERE tipTypeId = ?
+ORDER BY title ASC;
+
+selectWithCameraSettings:
+SELECT * FROM Tip
+WHERE (fstop != '' OR shutterSpeed != '' OR iso != '')
+ORDER BY title ASC;
+
+selectBySearch:
+SELECT * FROM Tip
+WHERE title LIKE '%' || ? || '%' 
+   OR content LIKE '%' || ? || '%'
+ORDER BY 
+  CASE 
+    WHEN title LIKE ? || '%' THEN 1
+    WHEN title LIKE '%' || ? || '%' THEN 2
+    ELSE 3
+  END,
+  title ASC;
+
+selectRandom:
+SELECT * FROM Tip
+ORDER BY RANDOM()
+LIMIT ?;
+
+insert:
+INSERT INTO Tip (tipTypeId, title, content, fstop, shutterSpeed, iso, i8n)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+update:
+UPDATE Tip
+SET tipTypeId = ?, title = ?, content = ?, fstop = ?, shutterSpeed = ?, iso = ?, i8n = ?
+WHERE id = ?;
+
+updateCameraSettings:
+UPDATE Tip
+SET fstop = ?, shutterSpeed = ?, iso = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM Tip
+WHERE id = ?;
+
+deleteByTypeId:
+DELETE FROM Tip
+WHERE tipTypeId = ?;
+
+getCount:
+SELECT COUNT(*) FROM Tip;
+
+getCountByType:
+SELECT COUNT(*) FROM Tip
+WHERE tipTypeId = ?;

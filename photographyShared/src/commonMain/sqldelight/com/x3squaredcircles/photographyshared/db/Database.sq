@@ -1,0 +1,201 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/Database.sq
+
+-- Database metadata and configuration
+PRAGMA user_version = 1;
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+
+-- Location table (core entity)
+CREATE TABLE IF NOT EXISTS Location (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    photoPath TEXT DEFAULT NULL,
+    isDeleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Weather table (top-level weather response metadata)
+CREATE TABLE IF NOT EXISTS Weather (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    locationId INTEGER NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    timezone TEXT NOT NULL,
+    timezoneOffset INTEGER NOT NULL,
+    lastUpdate INTEGER NOT NULL,
+    isDeleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    FOREIGN KEY (locationId) REFERENCES Location(id) ON DELETE CASCADE
+);
+
+-- Photography-specific tables
+-- Tip Types (photography categories)
+CREATE TABLE IF NOT EXISTS TipType (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
+    i8n TEXT NOT NULL DEFAULT 'en-US'
+);
+
+-- Tips (photography advice with camera settings)
+CREATE TABLE IF NOT EXISTS Tip (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    tipTypeId INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    fstop TEXT NOT NULL DEFAULT '',
+    shutterSpeed TEXT NOT NULL DEFAULT '',
+    iso TEXT NOT NULL DEFAULT '',
+    i8n TEXT NOT NULL DEFAULT 'en-US',
+    FOREIGN KEY (tipTypeId) REFERENCES TipType(id) ON DELETE CASCADE
+);
+
+-- Settings (photography configuration)
+CREATE TABLE IF NOT EXISTS Setting (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    timestamp INTEGER NOT NULL
+);
+
+-- Camera Bodies
+CREATE TABLE IF NOT EXISTS CameraBody (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    sensorType TEXT NOT NULL,
+    sensorWidth REAL NOT NULL,
+    sensorHeight REAL NOT NULL,
+    mountType TEXT NOT NULL,
+    isUserCreated INTEGER AS Boolean NOT NULL DEFAULT 0,
+    dateAdded INTEGER NOT NULL
+);
+
+-- Lenses
+CREATE TABLE IF NOT EXISTS Lens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    minMM REAL NOT NULL,
+    maxMM REAL NOT NULL,
+    minFStop REAL NOT NULL,
+    maxFStop REAL NOT NULL,
+    isPrime INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isUserCreated INTEGER AS Boolean NOT NULL DEFAULT 0,
+    nameForLens TEXT NOT NULL DEFAULT '',
+    dateAdded INTEGER NOT NULL
+);
+
+-- Lens-Camera compatibility mapping
+CREATE TABLE IF NOT EXISTS LensCameraCompatibility (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    lensId INTEGER NOT NULL,
+    cameraBodyId INTEGER NOT NULL,
+    dateAdded INTEGER NOT NULL,
+    FOREIGN KEY (lensId) REFERENCES Lens(id) ON DELETE CASCADE,
+    FOREIGN KEY (cameraBodyId) REFERENCES CameraBody(id) ON DELETE CASCADE,
+    UNIQUE(lensId, cameraBodyId)
+);
+
+-- Subscription tracking
+CREATE TABLE IF NOT EXISTS Subscription (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    userId TEXT NOT NULL,
+    transactionId TEXT NOT NULL UNIQUE,
+    purchaseToken TEXT NOT NULL UNIQUE,
+    productId TEXT NOT NULL,
+    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    expirationDate INTEGER NOT NULL,
+    purchaseDate INTEGER NOT NULL,
+    lastVerified INTEGER NOT NULL
+);
+
+-- Hourly weather forecasts
+CREATE TABLE IF NOT EXISTS HourlyForecast (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    weatherId INTEGER NOT NULL,
+    forecastTime INTEGER NOT NULL,
+    temperature REAL DEFAULT NULL,
+    feelsLike REAL DEFAULT NULL,
+    humidity REAL DEFAULT NULL,
+    pressure REAL DEFAULT NULL,
+    visibility REAL DEFAULT NULL,
+    uvIndex REAL DEFAULT NULL,
+    windSpeed REAL DEFAULT NULL,
+    windDirection REAL DEFAULT NULL,
+    windGust REAL DEFAULT NULL,
+    cloudCover REAL DEFAULT NULL,
+    precipitationChance REAL DEFAULT NULL,
+    precipitationAmount REAL DEFAULT NULL,
+    condition TEXT DEFAULT NULL,
+    description TEXT DEFAULT NULL,
+    icon TEXT DEFAULT NULL,
+    FOREIGN KEY (weatherId) REFERENCES Weather(id) ON DELETE CASCADE
+);
+
+-- Daily weather forecasts
+CREATE TABLE IF NOT EXISTS DailyForecast (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    weatherId INTEGER NOT NULL,
+    forecastDate INTEGER NOT NULL,
+    minTemperature REAL DEFAULT NULL,
+    maxTemperature REAL DEFAULT NULL,
+    humidity REAL DEFAULT NULL,
+    pressure REAL DEFAULT NULL,
+    uvIndex REAL DEFAULT NULL,
+    windSpeed REAL DEFAULT NULL,
+    windDirection REAL DEFAULT NULL,
+    windGust REAL DEFAULT NULL,
+    cloudCover REAL DEFAULT NULL,
+    precipitationChance REAL DEFAULT NULL,
+    precipitationAmount REAL DEFAULT NULL,
+    condition TEXT DEFAULT NULL,
+    description TEXT DEFAULT NULL,
+    icon TEXT DEFAULT NULL,
+    sunrise INTEGER DEFAULT NULL,
+    sunset INTEGER DEFAULT NULL,
+    moonPhase REAL DEFAULT NULL,
+    moonrise INTEGER DEFAULT NULL,
+    moonset INTEGER DEFAULT NULL,
+    FOREIGN KEY (weatherId) REFERENCES Weather(id) ON DELETE CASCADE
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_location_coordinates ON Location(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_location_title ON Location(title);
+CREATE INDEX IF NOT EXISTS idx_location_deleted ON Location(isDeleted);
+CREATE INDEX IF NOT EXISTS idx_location_created ON Location(createdAt);
+
+CREATE INDEX IF NOT EXISTS idx_weather_location ON Weather(locationId);
+CREATE INDEX IF NOT EXISTS idx_weather_coordinates ON Weather(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_weather_lastUpdate ON Weather(lastUpdate);
+CREATE INDEX IF NOT EXISTS idx_weather_deleted ON Weather(isDeleted);
+
+CREATE INDEX IF NOT EXISTS idx_tip_tiptype ON Tip(tipTypeId);
+CREATE INDEX IF NOT EXISTS idx_tip_title ON Tip(title);
+
+CREATE INDEX IF NOT EXISTS idx_setting_key ON Setting(key);
+CREATE INDEX IF NOT EXISTS idx_setting_timestamp ON Setting(timestamp);
+
+CREATE INDEX IF NOT EXISTS idx_camerabody_name ON CameraBody(name);
+CREATE INDEX IF NOT EXISTS idx_camerabody_mounttype ON CameraBody(mountType);
+CREATE INDEX IF NOT EXISTS idx_camerabody_usercreated ON CameraBody(isUserCreated);
+
+CREATE INDEX IF NOT EXISTS idx_lens_focal_range ON Lens(minMM, maxMM);
+CREATE INDEX IF NOT EXISTS idx_lens_aperture ON Lens(minFStop, maxFStop);
+CREATE INDEX IF NOT EXISTS idx_lens_usercreated ON Lens(isUserCreated);
+
+CREATE INDEX IF NOT EXISTS idx_compatibility_lens ON LensCameraCompatibility(lensId);
+CREATE INDEX IF NOT EXISTS idx_compatibility_camera ON LensCameraCompatibility(cameraBodyId);
+
+CREATE INDEX IF NOT EXISTS idx_subscription_user ON Subscription(userId);
+CREATE INDEX IF NOT EXISTS idx_subscription_active ON Subscription(isActive);
+CREATE INDEX IF NOT EXISTS idx_subscription_expiration ON Subscription(expirationDate);
+
+CREATE INDEX IF NOT EXISTS idx_hourly_weather ON HourlyForecast(weatherId);
+CREATE INDEX IF NOT EXISTS idx_hourly_time ON HourlyForecast(forecastTime);
+CREATE INDEX IF NOT EXISTS idx_hourly_weather_time ON HourlyForecast(weatherId, forecastTime);
+
+CREATE INDEX IF NOT EXISTS idx_daily_weather ON DailyForecast(weatherId);
+CREATE INDEX IF NOT EXISTS idx_daily_date ON DailyForecast(forecastDate);
+CREATE INDEX IF NOT EXISTS idx_daily_weather_date ON DailyForecast(weatherId, forecastDate);

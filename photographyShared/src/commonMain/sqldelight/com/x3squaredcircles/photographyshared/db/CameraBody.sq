@@ -1,0 +1,61 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/CameraBody.sq
+
+selectAll:
+SELECT * FROM CameraBody
+ORDER BY isUserCreated DESC, name ASC;
+
+selectById:
+SELECT * FROM CameraBody
+WHERE id = ?;
+
+selectPaged:
+SELECT * FROM CameraBody
+ORDER BY isUserCreated DESC, name ASC
+LIMIT ? OFFSET ?;
+
+selectUserCreated:
+SELECT * FROM CameraBody
+WHERE isUserCreated = 1
+ORDER BY dateAdded DESC;
+
+selectByMountType:
+SELECT * FROM CameraBody
+WHERE mountType = ?
+ORDER BY isUserCreated DESC, name ASC;
+
+selectByName:
+SELECT * FROM CameraBody
+WHERE name LIKE '%' || ? || '%'
+ORDER BY 
+  CASE WHEN name = ? THEN 1
+       WHEN name LIKE ? || '%' THEN 2
+       ELSE 3
+  END,
+  isUserCreated DESC,
+  name ASC;
+
+insert:
+INSERT INTO CameraBody (name, sensorType, sensorWidth, sensorHeight, mountType, isUserCreated, dateAdded)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+update:
+UPDATE CameraBody
+SET name = ?, sensorType = ?, sensorWidth = ?, sensorHeight = ?, mountType = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM CameraBody
+WHERE id = ?;
+
+existsByName:
+SELECT COUNT(*) > 0 FROM CameraBody
+WHERE name = ? AND id != :excludeId;
+
+getTotalCount:
+SELECT COUNT(*) FROM CameraBody;
+
+getCountByMountType:
+SELECT mountType, COUNT(*) as count
+FROM CameraBody
+GROUP BY mountType
+ORDER BY count DESC;
