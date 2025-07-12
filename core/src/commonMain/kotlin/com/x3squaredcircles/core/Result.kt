@@ -2,7 +2,7 @@
 package com.x3squaredcircles.core
 
 import kotlinx.serialization.Serializable
-
+import kotlinx.serialization.Contextual
 
 /**
  * A discriminated union that encapsulates a successful outcome with a value of type [T]
@@ -21,7 +21,7 @@ sealed class Result<out T> {
      * Represents a failed result containing an error message.
      */
     @Serializable
-    data class Failure<out T>(val errorMessage: String, val exception: Throwable? = null) : Result<T>()
+    data class Failure<out T>(val errorMessage: String, @Contextual val exception: Throwable? = null) : Result<T>()
     
     /**
      * Returns `true` if this instance represents a successful outcome.

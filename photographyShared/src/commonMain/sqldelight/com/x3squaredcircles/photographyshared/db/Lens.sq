@@ -58,6 +58,6 @@ SELECT COUNT(*) FROM Lens;
 
 getCountByType:
 SELECT 
-  COUNT(CASE WHEN isPrime = 1 THEN 1 END) as primeCount,
-  COUNT(CASE WHEN isPrime = 0 THEN 1 END) as zoomCount
+  COUNT(CASE WHEN isPrime = 1 THEN 1 END),
+  COUNT(CASE WHEN isPrime = 0 THEN 1 END)
 FROM Lens;

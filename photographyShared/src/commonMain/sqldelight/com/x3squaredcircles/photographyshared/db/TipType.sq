@@ -15,7 +15,7 @@ WHERE name = ?;
 selectWithTips:
 SELECT 
   tt.*,
-  COUNT(t.id) as tipCount
+  COUNT(t.id)
 FROM TipType tt
 LEFT JOIN Tip t ON tt.id = t.tipTypeId
 GROUP BY tt.id, tt.name, tt.i8n

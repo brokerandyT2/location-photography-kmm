@@ -2,7 +2,7 @@
 
 -- Database metadata and configuration
 PRAGMA user_version = 1;
-PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys = 1;
 PRAGMA journal_mode = WAL;
 
 -- Location table (core entity)

@@ -55,7 +55,5 @@ getTotalCount:
 SELECT COUNT(*) FROM CameraBody;
 
 getCountByMountType:
-SELECT mountType, COUNT(*) as count
-FROM CameraBody
-GROUP BY mountType
-ORDER BY count DESC;
+SELECT mountType, COUNT(*)
+FROM CameraBody;

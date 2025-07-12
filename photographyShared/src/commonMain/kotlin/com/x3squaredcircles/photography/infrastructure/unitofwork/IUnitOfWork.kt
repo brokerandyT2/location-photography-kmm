@@ -3,6 +3,15 @@ package com.x3squaredcircles.photographyshared.infrastructure.unitofwork
 
 import com.x3squaredcircles.core.infrastructure.repositories.ILocationRepository
 import com.x3squaredcircles.core.infrastructure.repositories.IWeatherRepository
+import com.x3squaredcircles.core.infrastructure.repositories.*
+import com.x3squaredcircles.core.infrastructure.repositories.IDailyForecastRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ITipTypeRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ITipRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ICameraBodyRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ISettingRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ILensRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ILensCameraCompatibilityRepository
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ISubscriptionRepository
 
 
 /**

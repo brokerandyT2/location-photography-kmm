@@ -43,12 +43,20 @@ WHERE lastUpdate < ? AND isDeleted = 0
 ORDER BY lastUpdate ASC;
 
 insert:
-INSERT INTO Weather (locationId, latitude, longitude, timezone, timezoneOffset, lastUpdate, isDeleted)
-VALUES (?, ?, ?, ?, ?, ?, 0);
+INSERT INTO Weather (
+  locationId, latitude, longitude, timezone, timezoneOffset, lastUpdate,
+  temperature, feelsLike, humidity, pressure, visibility, uvIndex,
+  windSpeed, windDirection, windGust, cloudCover, condition, description,
+  icon, sunrise, sunset, isDeleted
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 update:
 UPDATE Weather
-SET locationId = ?, latitude = ?, longitude = ?, timezone = ?, timezoneOffset = ?, lastUpdate = ?
+SET locationId = ?, latitude = ?, longitude = ?, timezone = ?,
+    timezoneOffset = ?, lastUpdate = ?, temperature = ?, feelsLike = ?,
+    humidity = ?, pressure = ?, visibility = ?, uvIndex = ?, windSpeed = ?,
+    windDirection = ?, windGust = ?, cloudCover = ?, condition = ?,
+    description = ?, icon = ?, sunrise = ?, sunset = ?, isDeleted = ?
 WHERE id = ?;
 
 softDelete:

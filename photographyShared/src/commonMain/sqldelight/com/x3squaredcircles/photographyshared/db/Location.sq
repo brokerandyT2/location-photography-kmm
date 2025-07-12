@@ -145,12 +145,12 @@ LIMIT 1;
 -- Get location statistics
 selectStats:
 SELECT 
-  COUNT(*) as totalCount,
-  COUNT(CASE WHEN isDeleted = 0 THEN 1 END) as activeCount,
-  COUNT(CASE WHEN isDeleted = 1 THEN 1 END) as deletedCount,
-  COUNT(CASE WHEN photoPath IS NOT NULL THEN 1 END) as withPhotosCount,
-  MIN(createdAt) as oldestCreatedAt,
-  MAX(createdAt) as newestCreatedAt
+  COUNT(*),
+  COUNT(CASE WHEN isDeleted = 0 THEN 1 END),
+  COUNT(CASE WHEN isDeleted = 1 THEN 1 END),
+  COUNT(CASE WHEN photoPath IS NOT NULL THEN 1 END),
+  MIN(createdAt),
+  MAX(createdAt)
 FROM Location;
 
 -- Clean up old deleted locations (for maintenance)
