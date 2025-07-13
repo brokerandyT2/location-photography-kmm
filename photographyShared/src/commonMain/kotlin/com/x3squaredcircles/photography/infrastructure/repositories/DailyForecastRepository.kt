@@ -1,9 +1,12 @@
 // photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photographyshared/infrastructure/repositories/DailyForecastRepository.kt
 package com.x3squaredcircles.photographyshared.infrastructure.repositories
 import com.x3squaredcircles.core.Result
-import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.core.domain.entities.WeatherForecast
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.core.infrastructure.repositories.IDailyForecastRepository
+import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -41,7 +44,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting all daily forecasts", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -77,7 +80,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecast by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -111,7 +114,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecasts by weather ID: $weatherId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -149,7 +152,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecasts by weather and date range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -183,7 +186,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting next 7 days forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -219,7 +222,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecast for date", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -256,7 +259,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting current forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -295,7 +298,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting best photography days", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -329,7 +332,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecasts by location ID: $locationId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -367,7 +370,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecasts by location and date range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -385,7 +388,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting sunrise/sunset", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -398,7 +401,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting moon phase", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -431,12 +434,12 @@ class DailyForecastRepository(
 
                 val newForecast = dailyForecast.copy(id = insertedId)
 
-                logger.logInformation("Created daily forecast with ID: $insertedId")
+                logger.logInfo("Created daily forecast with ID: $insertedId")
                 Result.success(newForecast)
             }
         } catch (e: Exception) {
             logger.logError("Error creating daily forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -473,12 +476,12 @@ class DailyForecastRepository(
                     }
                 }
 
-                logger.logInformation("Created ${dailyForecasts.size} daily forecasts")
+                logger.logInfo("Created ${dailyForecasts.size} daily forecasts")
                 Result.success(newForecasts)
             }
         } catch (e: Exception) {
             logger.logError("Error creating batch daily forecasts", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -506,12 +509,12 @@ class DailyForecastRepository(
                     id = dailyForecast.id.toLong()
                 )
 
-                logger.logInformation("Updated daily forecast with ID: ${dailyForecast.id}")
+                logger.logInfo("Updated daily forecast with ID: ${dailyForecast.id}")
                 Result.success(dailyForecast)
             }
         } catch (e: Exception) {
             logger.logError("Error updating daily forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -519,12 +522,12 @@ class DailyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.dailyForecastQueries.deleteById(id.toLong())
-                logger.logInformation("Deleted daily forecast with ID: $id")
+                logger.logInfo("Deleted daily forecast with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting daily forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -532,12 +535,12 @@ class DailyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.dailyForecastQueries.deleteByWeatherId(weatherId.toLong())
-                logger.logInformation("Deleted all daily forecasts for weather ID: $weatherId")
+                logger.logInfo("Deleted all daily forecasts for weather ID: $weatherId")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting daily forecasts by weather ID", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -545,12 +548,12 @@ class DailyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 val deletedCount = database.dailyForecastQueries.deleteOlderThan(olderThan).executeAsOne().toInt()
-                logger.logInformation("Deleted $deletedCount old daily forecasts")
+                logger.logInfo("Deleted $deletedCount old daily forecasts")
                 Result.success(deletedCount)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting old daily forecasts", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -562,12 +565,12 @@ class DailyForecastRepository(
                     startDate,
                     endDate
                 ).executeAsOne().toInt()
-                logger.logInformation("Deleted $deletedCount daily forecasts in date range")
+                logger.logInfo("Deleted $deletedCount daily forecasts in date range")
                 Result.success(deletedCount)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting daily forecasts by date range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -579,7 +582,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecast count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -591,7 +594,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting daily forecast count by weather", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -603,7 +606,7 @@ class DailyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error checking if daily forecast exists", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 }

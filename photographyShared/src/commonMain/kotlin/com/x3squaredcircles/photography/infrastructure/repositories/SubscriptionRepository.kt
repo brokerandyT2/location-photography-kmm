@@ -2,8 +2,10 @@
 package com.x3squaredcircles.photographyshared.infrastructure.repositories
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.photography.domain.entities.Subscription
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -36,7 +38,7 @@ class SubscriptionRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting all subscriptions", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -58,12 +60,12 @@ class SubscriptionRepository(
                     )
                     Result.success(subscription)
                 } else {
-                    Result.failure(Exception("Subscription not found"))
+                    Result.failure("Subscription not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting subscription by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -98,12 +100,12 @@ class SubscriptionRepository(
                     Result.success(subscription)
                 } else {
                     subscriptionCache[cacheKey] = Pair(null, Clock.System.now().epochSeconds + (cacheTimeoutMinutes * 60))
-                    Result.failure(Exception("No active subscription found"))
+                    Result.failure("No active subscription found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting active subscription for user: $userId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -125,12 +127,12 @@ class SubscriptionRepository(
                     )
                     Result.success(subscription)
                 } else {
-                    Result.failure(Exception("Subscription not found"))
+                    Result.failure("Subscription not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting subscription by transaction ID: $transactionId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -152,12 +154,12 @@ class SubscriptionRepository(
                     )
                     Result.success(subscription)
                 } else {
-                    Result.failure(Exception("Subscription not found"))
+                    Result.failure("Subscription not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting subscription by purchase token: $purchaseToken", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -182,7 +184,7 @@ class SubscriptionRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting expired subscriptions", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -207,7 +209,7 @@ class SubscriptionRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting subscriptions for user: $userId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -233,12 +235,12 @@ class SubscriptionRepository(
 
                 invalidateCacheForUser(subscription.userId)
 
-                logger.logInformation("Created subscription with ID: $insertedId")
+                logger.logInfo("Created subscription with ID: $insertedId")
                 Result.success(newSubscription)
             }
         } catch (e: Exception) {
             logger.logError("Error creating subscription", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -252,19 +254,18 @@ class SubscriptionRepository(
                     productId = subscription.productId,
                     isActive = if (subscription.isActive) 1L else 0L,
                     expirationDate = subscription.expirationDate,
-                    purchaseDate = subscription.purchaseDate,
-                    lastVerified = subscription.lastVerified,
+                   lastVerified = subscription.lastVerified,
                     id = subscription.id.toLong()
                 )
 
                 invalidateCacheForUser(subscription.userId)
 
-                logger.logInformation("Updated subscription with ID: ${subscription.id}")
+                logger.logInfo("Updated subscription with ID: ${subscription.id}")
                 Result.success(subscription)
             }
         } catch (e: Exception) {
             logger.logError("Error updating subscription", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -282,12 +283,12 @@ class SubscriptionRepository(
                     invalidateCacheForUser(it.userId)
                 }
 
-                logger.logInformation("Updated subscription status for ID: $id")
+                logger.logInfo("Updated subscription status for ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error updating subscription status", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -313,12 +314,12 @@ class SubscriptionRepository(
                     }
                 }
 
-                logger.logInformation("Deactivated $deactivatedCount expired subscriptions")
+                logger.logInfo("Deactivated $deactivatedCount expired subscriptions")
                 Result.success(deactivatedCount)
             }
         } catch (e: Exception) {
             logger.logError("Error deactivating expired subscriptions", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -332,12 +333,12 @@ class SubscriptionRepository(
                     invalidateCacheForUser(it.userId)
                 }
 
-                logger.logInformation("Deleted subscription with ID: $id")
+                logger.logInfo("Deleted subscription with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting subscription", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -349,7 +350,7 @@ class SubscriptionRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting subscription count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -361,7 +362,7 @@ class SubscriptionRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting active subscription count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 

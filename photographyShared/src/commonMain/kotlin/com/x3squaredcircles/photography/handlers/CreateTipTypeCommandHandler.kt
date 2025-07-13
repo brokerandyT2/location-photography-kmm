@@ -20,10 +20,7 @@ class CreateTipTypeCommandHandler(
             val currentTime = Clock.System.now().epochSeconds
             val tipType = TipType(
                 id = 0,
-                name = request.name,
-                description = request.description,
-                dateAdded = currentTime,
-                isUserCreated = request.isUserCreated
+                name = request.name
             )
 
             val createResult = tipTypeRepository.createAsync(tipType)
@@ -35,9 +32,7 @@ class CreateTipTypeCommandHandler(
             val tipTypeDto = TipTypeDto(
                 id = createdTipType.id,
                 name = createdTipType.name,
-                description = createdTipType.description,
-                dateAdded = createdTipType.dateAdded,
-                isUserCreated = createdTipType.isUserCreated
+                description = createdTipType.displayName
             )
 
             Result.success(tipTypeDto)

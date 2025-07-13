@@ -1,10 +1,13 @@
 // photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photographyshared/infrastructure/repositories/LensCameraCompatibilityRepository.kt
-package com.x3squaredcircles.photographyshared.infrastructure.repositories
+package com.x3squaredcircles.photography.infrastructure.repositories
 
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.photography.domain.entities.LensCameraCompatibility
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ILensCameraCompatibilityRepository
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -30,7 +33,7 @@ class LensCameraCompatibilityRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting all lens-camera compatibilities", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -47,12 +50,12 @@ class LensCameraCompatibilityRepository(
                     )
                     Result.success(compatibility)
                 } else {
-                    Result.failure(Exception("Lens-camera compatibility not found"))
+                    Result.failure("Lens-camera compatibility not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting lens-camera compatibility by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -72,7 +75,7 @@ class LensCameraCompatibilityRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting lens-camera compatibilities by lens ID: $lensId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -92,7 +95,7 @@ class LensCameraCompatibilityRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting lens-camera compatibilities by camera ID: $cameraBodyId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -115,12 +118,12 @@ class LensCameraCompatibilityRepository(
                     dateAdded = currentTime
                 )
 
-                logger.logInformation("Created lens-camera compatibility with ID: $insertedId")
+                logger.logInfo("Created lens-camera compatibility with ID: $insertedId")
                 Result.success(newCompatibility)
             }
         } catch (e: Exception) {
             logger.logError("Error creating lens-camera compatibility", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -146,12 +149,12 @@ class LensCameraCompatibilityRepository(
                     compatibility.copy(dateAdded = currentTime)
                 }
 
-                logger.logInformation("Created ${compatibilities.size} lens-camera compatibilities")
+                logger.logInfo("Created ${compatibilities.size} lens-camera compatibilities")
                 Result.success(newCompatibilities)
             }
         } catch (e: Exception) {
             logger.logError("Error creating batch lens-camera compatibilities", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -159,12 +162,12 @@ class LensCameraCompatibilityRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.lensCameraCompatibilityQueries.deleteById(id.toLong())
-                logger.logInformation("Deleted lens-camera compatibility with ID: $id")
+                logger.logInfo("Deleted lens-camera compatibility with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting lens-camera compatibility", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -172,12 +175,12 @@ class LensCameraCompatibilityRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.lensCameraCompatibilityQueries.deleteByLensAndCamera(lensId.toLong(), cameraBodyId.toLong())
-                logger.logInformation("Deleted lens-camera compatibility: LensId=$lensId, CameraId=$cameraBodyId")
+                logger.logInfo("Deleted lens-camera compatibility: LensId=$lensId, CameraId=$cameraBodyId")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting lens-camera compatibility by lens and camera", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -185,12 +188,12 @@ class LensCameraCompatibilityRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.lensCameraCompatibilityQueries.deleteByLensId(lensId.toLong())
-                logger.logInformation("Deleted all compatibilities for lens ID: $lensId")
+                logger.logInfo("Deleted all compatibilities for lens ID: $lensId")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting lens-camera compatibilities by lens ID", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -198,12 +201,12 @@ class LensCameraCompatibilityRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.lensCameraCompatibilityQueries.deleteByCameraId(cameraBodyId.toLong())
-                logger.logInformation("Deleted all compatibilities for camera ID: $cameraBodyId")
+                logger.logInfo("Deleted all compatibilities for camera ID: $cameraBodyId")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting lens-camera compatibilities by camera ID", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -215,7 +218,7 @@ class LensCameraCompatibilityRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error checking if lens-camera compatibility exists", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -227,7 +230,7 @@ class LensCameraCompatibilityRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting lens-camera compatibility count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 }

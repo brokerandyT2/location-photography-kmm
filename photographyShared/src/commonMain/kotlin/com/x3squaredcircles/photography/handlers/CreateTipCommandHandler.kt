@@ -20,9 +20,7 @@ class CreateTipCommandHandler(
                 content = request.content,
                 fstop = request.fstop,
                 shutterSpeed = request.shutterSpeed,
-                iso = request.iso,
-                dateAdded = currentTime,
-                isUserCreated = request.isUserCreated
+                iso = request.iso
             )
 
             val createResult = tipRepository.createAsync(tip)
@@ -38,9 +36,7 @@ class CreateTipCommandHandler(
                 content = createdTip.content,
                 fstop = createdTip.fstop,
                 shutterSpeed = createdTip.shutterSpeed,
-                iso = createdTip.iso,
-                dateAdded = createdTip.dateAdded,
-                isUserCreated = createdTip.isUserCreated
+                iso = createdTip.iso
             )
 
             Result.success(tipDto)

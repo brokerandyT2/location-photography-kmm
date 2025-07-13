@@ -2,8 +2,10 @@
 package com.x3squaredcircles.photographyshared.infrastructure.repositories
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.photography.domain.entities.CameraBody
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -32,7 +34,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting all camera bodies", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -53,12 +55,12 @@ class CameraBodyRepository(
                     )
                     Result.success(cameraBody)
                 } else {
-                    Result.failure(Exception("Camera body not found"))
+                    Result.failure("Camera body not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting camera body by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -82,7 +84,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting paged camera bodies", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -106,7 +108,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting user created camera bodies", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -130,7 +132,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting camera bodies by mount type: $mountType", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -154,7 +156,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error searching camera bodies by name: $name", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -181,12 +183,12 @@ class CameraBodyRepository(
                     dateAdded = currentTime
                 )
 
-                logger.logInformation("Created camera body with ID: $insertedId")
+                logger.logInfo("Created camera body with ID: $insertedId")
                 Result.success(newCameraBody)
             }
         } catch (e: Exception) {
             logger.logError("Error creating camera body", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -202,12 +204,12 @@ class CameraBodyRepository(
                     id = cameraBody.id.toLong()
                 )
 
-                logger.logInformation("Updated camera body with ID: ${cameraBody.id}")
+                logger.logInfo("Updated camera body with ID: ${cameraBody.id}")
                 Result.success(cameraBody)
             }
         } catch (e: Exception) {
             logger.logError("Error updating camera body", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -215,12 +217,12 @@ class CameraBodyRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.cameraBodyQueries.deleteById(id.toLong())
-                logger.logInformation("Deleted camera body with ID: $id")
+                logger.logInfo("Deleted camera body with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting camera body", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -232,7 +234,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error checking if camera body exists by name", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -244,7 +246,7 @@ class CameraBodyRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting camera body count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -253,13 +255,13 @@ class CameraBodyRepository(
             withContext(Dispatchers.IO) {
                 val results = database.cameraBodyQueries.getCountByMountType().executeAsList()
                 val countMap = results.associate { result ->
-                    result.mountType to result.expr.toInt()
+                    result.mountType to result.mountType.toInt()
                 }
                 Result.success(countMap)
             }
         } catch (e: Exception) {
             logger.logError("Error getting camera body count by mount type", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 }

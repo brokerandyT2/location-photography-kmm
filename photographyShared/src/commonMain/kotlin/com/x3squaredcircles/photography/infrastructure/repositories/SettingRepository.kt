@@ -3,8 +3,10 @@ package com.x3squaredcircles.photographyshared.infrastructure.repositories
 
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.photography.domain.entities.Setting
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -22,7 +24,7 @@ class SettingRepository(
                     Setting(
                         id = entity.id.toInt(),
                         key = entity.key,
-                        value = entity.value,
+                        value = entity.value_,
                         description = entity.description,
                         timestamp = entity.timestamp
                     )
@@ -31,7 +33,7 @@ class SettingRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting all settings", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -43,18 +45,18 @@ class SettingRepository(
                     val setting = Setting(
                         id = entity.id.toInt(),
                         key = entity.key,
-                        value = entity.value,
+                        value = entity.value_,
                         description = entity.description,
                         timestamp = entity.timestamp
                     )
                     Result.success(setting)
                 } else {
-                    Result.failure(Exception("Setting not found"))
+                    Result.failure("Setting not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting setting by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -66,18 +68,18 @@ class SettingRepository(
                     val setting = Setting(
                         id = entity.id.toInt(),
                         key = entity.key,
-                        value = entity.value,
+                        value = entity.value_,
                         description = entity.description,
                         timestamp = entity.timestamp
                     )
                     Result.success(setting)
                 } else {
-                    Result.failure(Exception("Setting not found for key: $key"))
+                    Result.failure("Setting not found for key: $key")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting setting by key: $key", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -92,7 +94,7 @@ class SettingRepository(
                             Setting(
                                 id = it.id.toInt(),
                                 key = it.key,
-                                value = it.value,
+                                value = it.value_,
                                 description = it.description,
                                 timestamp = it.timestamp
                             )
@@ -103,7 +105,7 @@ class SettingRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting settings by keys", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -112,13 +114,13 @@ class SettingRepository(
             withContext(Dispatchers.IO) {
                 val entities = database.settingQueries.selectAll().executeAsList()
                 val dictionary = entities.associate { entity ->
-                    entity.key to entity.value
+                    entity.key to entity.value_
                 }
                 Result.success(dictionary)
             }
         } catch (e: Exception) {
             logger.logError("Error getting settings as dictionary", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -128,7 +130,7 @@ class SettingRepository(
                 val currentTime = Clock.System.now().epochSeconds
                 database.settingQueries.insert(
                     key = setting.key,
-                    value = setting.value,
+                    value_ = setting.value,
                     description = setting.description,
                     timestamp = currentTime
                 )
@@ -142,12 +144,12 @@ class SettingRepository(
                     timestamp = currentTime
                 )
 
-                logger.logInformation("Created setting with ID: $insertedId")
+                logger.logInfo("Created setting with ID: $insertedId")
                 Result.success(newSetting)
             }
         } catch (e: Exception) {
             logger.logError("Error creating setting", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -156,8 +158,7 @@ class SettingRepository(
             withContext(Dispatchers.IO) {
                 val currentTime = Clock.System.now().epochSeconds
                 database.settingQueries.update(
-                    key = setting.key,
-                    value = setting.value,
+                    value_ = setting.value,
                     description = setting.description,
                     timestamp = currentTime,
                     id = setting.id.toLong()
@@ -165,12 +166,12 @@ class SettingRepository(
 
                 val updatedSetting = setting.copy(timestamp = currentTime)
 
-                logger.logInformation("Updated setting with ID: ${setting.id}")
+                logger.logInfo("Updated setting with ID: ${setting.id}")
                 Result.success(updatedSetting)
             }
         } catch (e: Exception) {
             logger.logError("Error updating setting", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -179,7 +180,7 @@ class SettingRepository(
             withContext(Dispatchers.IO) {
                 val currentTime = Clock.System.now().epochSeconds
                 database.settingQueries.updateByKey(
-                    value = value,
+                    value_ = value,
                     description = description,
                     timestamp = currentTime,
                     key = key
@@ -190,19 +191,19 @@ class SettingRepository(
                     val setting = Setting(
                         id = entity.id.toInt(),
                         key = entity.key,
-                        value = entity.value,
+                        value = entity.value_,
                         description = entity.description,
                         timestamp = entity.timestamp
                     )
-                    logger.logInformation("Updated setting by key: $key")
+                    logger.logInfo("Updated setting by key: $key")
                     Result.success(setting)
                 } else {
-                    Result.failure(Exception("Setting not found after update"))
+                    Result.failure("Setting not found after update")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error updating setting by key: $key", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -239,7 +240,7 @@ class SettingRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error upserting setting", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -247,12 +248,12 @@ class SettingRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.settingQueries.deleteById(id.toLong())
-                logger.logInformation("Deleted setting with ID: $id")
+                logger.logInfo("Deleted setting with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting setting", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -260,12 +261,12 @@ class SettingRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.settingQueries.deleteByKey(key)
-                logger.logInformation("Deleted setting with key: $key")
+                logger.logInfo("Deleted setting with key: $key")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting setting by key", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -277,7 +278,7 @@ class SettingRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error checking if setting exists by key", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -289,7 +290,7 @@ class SettingRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting setting count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 }

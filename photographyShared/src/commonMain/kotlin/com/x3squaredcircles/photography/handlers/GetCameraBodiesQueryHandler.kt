@@ -2,10 +2,12 @@
 package com.x3squaredcircles.photographyshared.handlers
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.mediator.IQueryHandler
-import com.x3squaredcircles.photography.queries.GetCameraBodiesQuery
+
 import com.x3squaredcircles.photography.dtos.CameraBodyDto
 import com.x3squaredcircles.photography.dtos.GetCameraBodiesResultDto
 import com.x3squaredcircles.photographyshared.infrastructure.repositories.ICameraBodyRepository
+import com.x3squaredcircles.photographyshared.queries.GetCameraBodiesQuery
+
 class GetCameraBodiesQueryHandler(
     private val cameraBodyRepository: ICameraBodyRepository
 ) : IQueryHandler<GetCameraBodiesQuery, Result<GetCameraBodiesResultDto>> {
@@ -29,7 +31,7 @@ class GetCameraBodiesQueryHandler(
                         mountType = camera.mountType,
                         isUserCreated = camera.isUserCreated,
                         dateAdded = camera.dateAdded,
-                        displayName = camera.getDisplayName()
+                        displayName = camera.name
                     )
                 } ?: emptyList()
 
@@ -47,7 +49,7 @@ class GetCameraBodiesQueryHandler(
                             mountType = camera.mountType,
                             isUserCreated = camera.isUserCreated,
                             dateAdded = camera.dateAdded,
-                            displayName = camera.getDisplayName()
+                            displayName = camera.name
                         )
                     } ?: emptyList()
                     allCameras.addAll(dbCameraDtos)

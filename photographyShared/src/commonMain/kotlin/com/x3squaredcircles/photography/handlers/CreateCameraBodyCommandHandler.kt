@@ -3,6 +3,7 @@ package com.x3squaredcircles.photographyshared.handlers
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.mediator.ICommandHandler
 import com.x3squaredcircles.photography.commands.CreateCameraBodyCommand
+
 import com.x3squaredcircles.photography.domain.entities.CameraBody
 import com.x3squaredcircles.photography.dtos.CameraBodyDto
 import com.x3squaredcircles.photographyshared.infrastructure.repositories.ICameraBodyRepository
@@ -44,7 +45,7 @@ class CreateCameraBodyCommandHandler(
                 mountType = createdCamera.mountType,
                 isUserCreated = createdCamera.isUserCreated,
                 dateAdded = createdCamera.dateAdded,
-                displayName = createdCamera.getDisplayName()
+                displayName = createdCamera.name
             )
 
             Result.success(dto)

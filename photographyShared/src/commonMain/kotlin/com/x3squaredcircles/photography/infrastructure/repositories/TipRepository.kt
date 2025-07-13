@@ -3,8 +3,10 @@ package com.x3squaredcircles.photographyshared.infrastructure.repositories
 
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.photography.domain.entities.Tip
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -26,16 +28,14 @@ class TipRepository(
                         content = entity.content,
                         fstop = entity.fstop,
                         shutterSpeed = entity.shutterSpeed,
-                        iso = entity.iso,
-                        dateAdded = entity.dateAdded,
-                        isUserCreated = entity.isUserCreated == 1L
+                        iso = entity.iso
                     )
                 }
                 Result.success(tips)
             }
         } catch (e: Exception) {
             logger.logError("Error getting all tips", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -51,25 +51,23 @@ class TipRepository(
                         content = entity.content,
                         fstop = entity.fstop,
                         shutterSpeed = entity.shutterSpeed,
-                        iso = entity.iso,
-                        dateAdded = entity.dateAdded,
-                        isUserCreated = entity.isUserCreated == 1L
+                        iso = entity.iso
                     )
                     Result.success(tip)
                 } else {
-                    Result.failure(Exception("Tip not found"))
+                    Result.failure("Tip not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting tip by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
     override suspend fun getByTypeAsync(tipTypeId: Int): Result<List<Tip>> {
         return try {
             withContext(Dispatchers.IO) {
-                val entities = database.tipQueries.selectByType(tipTypeId.toLong()).executeAsList()
+                val entities = database.tipQueries.selectByTypeId(tipTypeId.toLong()).executeAsList()
                 val tips = entities.map { entity ->
                     Tip(
                         id = entity.id.toInt(),
@@ -78,16 +76,14 @@ class TipRepository(
                         content = entity.content,
                         fstop = entity.fstop,
                         shutterSpeed = entity.shutterSpeed,
-                        iso = entity.iso,
-                        dateAdded = entity.dateAdded,
-                        isUserCreated = entity.isUserCreated == 1L
+                        iso = entity.iso
                     )
                 }
                 Result.success(tips)
             }
         } catch (e: Exception) {
             logger.logError("Error getting tips by type: $tipTypeId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -103,23 +99,21 @@ class TipRepository(
                         content = entity.content,
                         fstop = entity.fstop,
                         shutterSpeed = entity.shutterSpeed,
-                        iso = entity.iso,
-                        dateAdded = entity.dateAdded,
-                        isUserCreated = entity.isUserCreated == 1L
+                        iso = entity.iso
                     )
                 }
                 Result.success(tips)
             }
         } catch (e: Exception) {
             logger.logError("Error getting tips with camera settings", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
     override suspend fun searchAsync(searchTerm: String): Result<List<Tip>> {
         return try {
             withContext(Dispatchers.IO) {
-                val entities = database.tipQueries.searchByText(searchTerm).executeAsList()
+                val entities = database.tipQueries.selectBySearch(searchTerm, "", "", "").executeAsList()
                 val tips = entities.map { entity ->
                     Tip(
                         id = entity.id.toInt(),
@@ -128,16 +122,14 @@ class TipRepository(
                         content = entity.content,
                         fstop = entity.fstop,
                         shutterSpeed = entity.shutterSpeed,
-                        iso = entity.iso,
-                        dateAdded = entity.dateAdded,
-                        isUserCreated = entity.isUserCreated == 1L
+                        iso = entity.iso
                     )
                 }
                 Result.success(tips)
             }
         } catch (e: Exception) {
             logger.logError("Error searching tips: $searchTerm", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -153,16 +145,14 @@ class TipRepository(
                         content = entity.content,
                         fstop = entity.fstop,
                         shutterSpeed = entity.shutterSpeed,
-                        iso = entity.iso,
-                        dateAdded = entity.dateAdded,
-                        isUserCreated = entity.isUserCreated == 1L
+                        iso = entity.iso
                     )
                 }
                 Result.success(tips)
             }
         } catch (e: Exception) {
             logger.logError("Error getting random tips", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -177,8 +167,7 @@ class TipRepository(
                     fstop = tip.fstop,
                     shutterSpeed = tip.shutterSpeed,
                     iso = tip.iso,
-                    dateAdded = currentTime,
-                    isUserCreated = if (tip.isUserCreated) 1L else 0L
+                    i8n = tip.i8n
                 )
 
                 val insertedId = database.tipQueries.transactionWithResult {
@@ -187,15 +176,15 @@ class TipRepository(
 
                 val newTip = tip.copy(
                     id = insertedId,
-                    dateAdded = currentTime
+                    i8n = "en-US"
                 )
 
-                logger.logInformation("Created tip with ID: $insertedId")
+                logger.logInfo("Created tip with ID: $insertedId")
                 Result.success(newTip)
             }
         } catch (e: Exception) {
             logger.logError("Error creating tip", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -209,16 +198,16 @@ class TipRepository(
                     fstop = tip.fstop,
                     shutterSpeed = tip.shutterSpeed,
                     iso = tip.iso,
-                    isUserCreated = if (tip.isUserCreated) 1L else 0L,
-                    id = tip.id.toLong()
+                    id = tip.id.toLong(),
+                    i8n = tip.i8n
                 )
 
-                logger.logInformation("Updated tip with ID: ${tip.id}")
+                logger.logInfo("Updated tip with ID: ${tip.id}")
                 Result.success(tip)
             }
         } catch (e: Exception) {
             logger.logError("Error updating tip", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -232,12 +221,12 @@ class TipRepository(
                     id = id.toLong()
                 )
 
-                logger.logInformation("Updated camera settings for tip ID: $id")
+                logger.logInfo("Updated camera settings for tip ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error updating camera settings for tip", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -245,25 +234,25 @@ class TipRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.tipQueries.deleteById(id.toLong())
-                logger.logInformation("Deleted tip with ID: $id")
+                logger.logInfo("Deleted tip with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting tip", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
     override suspend fun deleteByTypeAsync(tipTypeId: Int): Result<Boolean> {
         return try {
             withContext(Dispatchers.IO) {
-                database.tipQueries.deleteByType(tipTypeId.toLong())
-                logger.logInformation("Deleted all tips for type ID: $tipTypeId")
+                database.tipQueries.deleteByTypeId(tipTypeId.toLong())
+                logger.logInfo("Deleted all tips for type ID: $tipTypeId")
                 Result.success(true)
             }
         } catch (e: Exception) {
             logger.logError("Error deleting tips by type", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -275,7 +264,7 @@ class TipRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting tip count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -287,7 +276,7 @@ class TipRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting tip count by type", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 }

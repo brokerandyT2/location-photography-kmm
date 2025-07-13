@@ -2,9 +2,12 @@
 package com.x3squaredcircles.photographyshared.infrastructure.repositories
 
 import com.x3squaredcircles.core.Result
-import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+
 import com.x3squaredcircles.core.domain.entities.HourlyForecast
-import com.x3squaredcircles.photographyshared.infrastructure.database.PhotographyDatabase
+import com.x3squaredcircles.core.infrastructure.repositories.IHourlyForecastRepository
+import com.x3squaredcircles.core.infrastructure.services.ILoggingService
+import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
@@ -23,12 +26,12 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature!!,
+                        feelsLike = entity.feelsLike!!,
+                        humidity = entity.humidity!!,
+                        pressure = entity.pressure!!,
+                        windSpeed = entity.windSpeed!!,
+                        windDirection = entity.windDirection!!,
                         windGust = entity.windGust,
                         cloudCover = entity.cloudCover,
                         precipitationChance = entity.precipitationChance,
@@ -43,7 +46,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting all hourly forecasts", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -73,12 +76,12 @@ class HourlyForecastRepository(
                     )
                     Result.success(forecast)
                 } else {
-                    Result.failure(Exception("Hourly forecast not found"))
+                    Result.failure("Hourly forecast not found")
                 }
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecast by ID: $id", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -111,7 +114,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecasts by weather ID: $weatherId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -148,7 +151,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecasts by weather and time range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -181,7 +184,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting next 24 hours forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -214,7 +217,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting next 7 days hourly forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -251,7 +254,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecasts for day", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -289,7 +292,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting best conditions in range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -326,7 +329,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting golden hours forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -359,7 +362,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecasts by location ID: $locationId", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -396,7 +399,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecasts by location and time range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -433,7 +436,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error creating hourly forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -474,7 +477,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error creating batch hourly forecasts", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -506,7 +509,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error updating hourly forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -519,7 +522,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error deleting hourly forecast", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -532,7 +535,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error deleting hourly forecasts by weather ID", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -545,7 +548,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error deleting old hourly forecasts", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -562,7 +565,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error deleting hourly forecasts by time range", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -574,7 +577,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecast count", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -586,7 +589,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error getting hourly forecast count by weather", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 
@@ -598,7 +601,7 @@ class HourlyForecastRepository(
             }
         } catch (e: Exception) {
             logger.logError("Error checking if hourly forecast exists", e)
-            Result.failure(e)
+            Result.failure(e.message!!)
         }
     }
 }

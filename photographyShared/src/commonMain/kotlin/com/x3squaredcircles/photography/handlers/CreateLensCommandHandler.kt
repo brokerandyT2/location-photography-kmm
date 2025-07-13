@@ -2,11 +2,13 @@
 package com.x3squaredcircles.photographyshared.handlers
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.mediator.ICommandHandler
-import com.x3squaredcircles.photography.commands.CreateLensCommand
+
 import com.x3squaredcircles.photography.domain.entities.Lens
 import com.x3squaredcircles.photography.domain.entities.LensCameraCompatibility
 import com.x3squaredcircles.photography.dtos.CreateLensResultDto
+
 import com.x3squaredcircles.photography.dtos.LensDto
+import com.x3squaredcircles.photographyshared.commands.CreateLensCommand
 import com.x3squaredcircles.photographyshared.infrastructure.repositories.ILensRepository
 import com.x3squaredcircles.photographyshared.infrastructure.repositories.ILensCameraCompatibilityRepository
 import kotlinx.datetime.Clock
@@ -61,7 +63,7 @@ class CreateLensCommandHandler(
                 isPrime = createdLens.isPrime,
                 isUserCreated = createdLens.isUserCreated,
                 dateAdded = createdLens.dateAdded,
-                displayName = createdLens.getDisplayName()
+                displayName = createdLens.displayName
             )
 
             val resultDto = CreateLensResultDto(

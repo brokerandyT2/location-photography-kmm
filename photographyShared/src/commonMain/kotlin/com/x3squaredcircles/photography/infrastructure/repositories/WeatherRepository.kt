@@ -4,13 +4,15 @@ package com.x3squaredcircles.photography.infrastructure.repositories
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.domain.entities.Weather
 import com.x3squaredcircles.core.infrastructure.repositories.IWeatherRepository
+import com.x3squaredcircles.core.infrastructure.services.ILoggingService
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlin.math.*
 
 class WeatherRepository(
-    private val database: PhotographyDatabase
+    private val database: PhotographyDatabase,
+    private val logger: ILoggingService
 ) : IWeatherRepository {
 
     companion object {
