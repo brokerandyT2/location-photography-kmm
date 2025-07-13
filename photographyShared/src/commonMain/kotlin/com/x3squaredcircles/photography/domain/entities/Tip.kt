@@ -1,4 +1,4 @@
-// photography/src/commonMain/kotlin/com/x3squaredcircles/photography/domain/entities/Tip.kt
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/domain/entities/Tip.kt
 package com.x3squaredcircles.photography.domain.entities
 
 import com.x3squaredcircles.core.domain.common.Entity

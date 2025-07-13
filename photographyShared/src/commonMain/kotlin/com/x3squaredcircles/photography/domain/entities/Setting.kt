@@ -1,4 +1,4 @@
-// photography/src/commonMain/kotlin/com/x3squaredcircles/photography/domain/entities/Setting.kt
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/domain/entities/Setting.kt
 package com.x3squaredcircles.photography.domain.entities
 
 import com.x3squaredcircles.core.domain.common.Entity
@@ -111,59 +111,52 @@ data class Setting(
         return updateValue(newValue.toString())
     }
     
+    /**
+     * Creates a copy of this setting with a long value.
+     */
+    fun updateValue(newValue: Long): Setting {
+        return updateValue(newValue.toString())
+    }
+    
+    /**
+     * Validates that the setting has required properties.
+     */
+    fun isValid(): Boolean {
+        return key.isNotBlank() && timestamp > 0
+    }
+    
     companion object {
         /**
          * Creates a new Setting with the current timestamp.
          */
-        fun create(
-            key: String,
-            value: String,
-            description: String = ""
-        ): Setting {
-            require(key.isNotBlank()) { "Setting key cannot be blank" }
-            
-            val now = Clock.System.now().toEpochMilliseconds()
+        fun create(key: String, value: String, description: String = ""): Setting {
             return Setting(
-                key = key.trim(),
+                key = key,
                 value = value,
                 description = description,
-                timestamp = now
+                timestamp = Clock.System.now().toEpochMilliseconds()
             )
         }
         
         /**
-         * Creates a new Setting with a boolean value.
+         * Creates a Setting from a boolean value.
          */
-        fun create(key: String, value: Boolean, description: String = ""): Setting {
+        fun createBoolean(key: String, value: Boolean, description: String = ""): Setting {
             return create(key, value.toString(), description)
         }
         
         /**
-         * Creates a new Setting with an integer value.
+         * Creates a Setting from an integer value.
          */
-        fun create(key: String, value: Int, description: String = ""): Setting {
+        fun createInt(key: String, value: Int, description: String = ""): Setting {
             return create(key, value.toString(), description)
         }
         
         /**
-         * Creates a new Setting with a double value.
+         * Creates a Setting from a double value.
          */
-        fun create(key: String, value: Double, description: String = ""): Setting {
+        fun createDouble(key: String, value: Double, description: String = ""): Setting {
             return create(key, value.toString(), description)
-        }
-        
-        // Common photography setting keys
-        object Keys {
-            const val CAMERA_FLASH_ENABLED = "camera_flash_enabled"
-            const val DEFAULT_ISO = "default_iso"
-            const val PREFERRED_ASPECT_RATIO = "preferred_aspect_ratio"
-            const val AUTO_SAVE_LOCATION = "auto_save_location"
-            const val WEATHER_UPDATE_INTERVAL = "weather_update_interval"
-            const val NOTIFICATION_ENABLED = "notification_enabled"
-            const val UNIT_SYSTEM = "unit_system" // metric/imperial
-            const val LANGUAGE_CODE = "language_code"
-            const val THEME_MODE = "theme_mode" // light/dark/auto
-            const val GPS_PRECISION = "gps_precision"
         }
     }
 }
