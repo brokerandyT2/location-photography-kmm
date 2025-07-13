@@ -41,9 +41,8 @@ ORDER BY forecastTime ASC;
 selectBestConditionsInRange:
 SELECT * FROM HourlyForecast
 WHERE weatherId = ?
-  AND forecastTime BETWEEN ? AND ?
-  AND cloudCover IS NOT NULL
-  AND precipitationChance IS NOT NULL
+  AND forecastTime >= ?
+  AND forecastTime <= ?
 ORDER BY 
   precipitationChance ASC,
   cloudCover ASC,
@@ -53,7 +52,8 @@ LIMIT ?;
 selectGoldenHours:
 SELECT * FROM HourlyForecast
 WHERE weatherId = ?
-  AND forecastTime BETWEEN ? AND ?
+  AND forecastTime >= ?
+  AND forecastTime <= ?
   AND cloudCover IS NOT NULL
   AND cloudCover < 70
 ORDER BY forecastTime ASC;

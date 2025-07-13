@@ -1,20 +1,15 @@
-// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photographyshared/infrastructure/repositories/HourlyForecastRepository.kt
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/infrastructure/repositories/HourlyForecastRepository.kt
 package com.x3squaredcircles.photographyshared.infrastructure.repositories
 
 import com.x3squaredcircles.core.Result
-
 import com.x3squaredcircles.core.domain.entities.HourlyForecast
 import com.x3squaredcircles.core.infrastructure.repositories.IHourlyForecastRepository
-import com.x3squaredcircles.core.infrastructure.services.ILoggingService
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
-
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.datetime.Clock
 
 class HourlyForecastRepository(
-    private val database: PhotographyDatabase,
-    private val logger: ILoggingService
+    private val database: PhotographyDatabase
 ) : IHourlyForecastRepository {
 
     override suspend fun getAllAsync(): Result<List<HourlyForecast>> {
@@ -26,27 +21,27 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature!!,
-                        feelsLike = entity.feelsLike!!,
-                        humidity = entity.humidity!!,
-                        pressure = entity.pressure!!,
-                        windSpeed = entity.windSpeed!!,
-                        windDirection = entity.windDirection!!,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting all hourly forecasts", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting all hourly forecasts: ${e.message}", e)
         }
     }
 
@@ -59,20 +54,21 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                     Result.success(forecast)
                 } else {
@@ -80,8 +76,7 @@ class HourlyForecastRepository(
                 }
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecast by ID: $id", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecast by ID: $id - ${e.message}", e)
         }
     }
 
@@ -94,27 +89,27 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecasts by weather ID: $weatherId", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecasts by weather ID: $weatherId - ${e.message}", e)
         }
     }
 
@@ -131,93 +126,103 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecasts by weather and time range", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecasts by weather and time range - ${e.message}", e)
         }
     }
 
     override suspend fun getNext24HoursAsync(weatherId: Int, fromTime: Long): Result<List<HourlyForecast>> {
         return try {
             withContext(Dispatchers.IO) {
-                val entities = database.hourlyForecastQueries.selectNext24Hours(weatherId.toLong(), fromTime).executeAsList()
+                val endTime = fromTime + (24 * 60 * 60 * 1000)
+                val entities = database.hourlyForecastQueries.selectNext24Hours(
+                    weatherId.toLong(),
+                    fromTime,
+                    endTime
+                ).executeAsList()
                 val forecasts = entities.map { entity ->
                     HourlyForecast(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting next 24 hours forecast", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting next 24 hours forecast - ${e.message}", e)
         }
     }
 
     override suspend fun getNext7DaysAsync(weatherId: Int, fromTime: Long): Result<List<HourlyForecast>> {
         return try {
             withContext(Dispatchers.IO) {
-                val entities = database.hourlyForecastQueries.selectNext7Days(weatherId.toLong(), fromTime).executeAsList()
+                val endTime = fromTime + (7 * 24 * 60 * 60 * 1000)
+                val entities = database.hourlyForecastQueries.selectNext7Days(
+                    weatherId.toLong(),
+                    fromTime,
+                    endTime
+                ).executeAsList()
                 val forecasts = entities.map { entity ->
                     HourlyForecast(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting next 7 days hourly forecast", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting next 7 days hourly forecast - ${e.message}", e)
         }
     }
 
@@ -234,34 +239,34 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecasts for day", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecasts for day - ${e.message}", e)
         }
     }
 
     override suspend fun getBestConditionsInRangeAsync(weatherId: Int, startTime: Long, endTime: Long, count: Int): Result<List<HourlyForecast>> {
         return try {
             withContext(Dispatchers.IO) {
-                val entities = database.hourlyForecastQueries.selectBestConditions(
+                val entities = database.hourlyForecastQueries.selectBestConditionsInRange(
                     weatherId.toLong(),
                     startTime,
                     endTime,
@@ -272,27 +277,27 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting best conditions in range", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting best conditions in range - ${e.message}", e)
         }
     }
 
@@ -309,27 +314,27 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover.toInt(),
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting golden hours forecast", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting golden hours forecast - ${e.message}", e)
         }
     }
 
@@ -342,27 +347,27 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecasts by location ID: $locationId", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecasts by location ID: $locationId - ${e.message}", e)
         }
     }
 
@@ -379,27 +384,27 @@ class HourlyForecastRepository(
                         id = entity.id.toInt(),
                         weatherId = entity.weatherId.toInt(),
                         forecastTime = entity.forecastTime,
-                        temperature = entity.temperature,
-                        feelsLike = entity.feelsLike,
-                        humidity = entity.humidity,
-                        pressure = entity.pressure,
-                        windSpeed = entity.windSpeed,
-                        windDirection = entity.windDirection,
+                        temperature = entity.temperature ?: 0.0,
+                        feelsLike = entity.feelsLike ?: 0.0,
+                        humidity = entity.humidity?.toInt() ?: 0,
+                        pressure = entity.pressure?.toInt() ?: 0,
+                        visibility = entity.visibility ?: 0.0,
+                        uvIndex = entity.uvIndex ?: 0.0,
+                        windSpeed = entity.windSpeed ?: 0.0,
+                        windDirection = entity.windDirection ?: 0.0,
                         windGust = entity.windGust,
-                        cloudCover = entity.cloudCover,
-                        precipitationChance = entity.precipitationChance,
+                        cloudCover = entity.cloudCover?.toInt() ?: 0,
+                        precipitationChance = entity.precipitationChance ?: 0.0,
                         precipitationAmount = entity.precipitationAmount,
-                        weatherCondition = entity.weatherCondition,
-                        uvIndex = entity.uvIndex,
-                        visibility = entity.visibility,
-                        dewPoint = entity.dewPoint
+                        condition = entity.condition ?: "",
+                        description = entity.description ?: "",
+                        icon = entity.icon ?: ""
                     )
                 }
                 Result.success(forecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecasts by location and time range", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecasts by location and time range - ${e.message}", e)
         }
     }
 
@@ -411,18 +416,19 @@ class HourlyForecastRepository(
                     forecastTime = hourlyForecast.forecastTime,
                     temperature = hourlyForecast.temperature,
                     feelsLike = hourlyForecast.feelsLike,
-                    humidity = hourlyForecast.humidity,
-                    pressure = hourlyForecast.pressure,
+                    humidity = hourlyForecast.humidity.toDouble(),
+                    pressure = hourlyForecast.pressure.toDouble(),
+                    visibility = hourlyForecast.visibility,
+                    uvIndex = hourlyForecast.uvIndex,
                     windSpeed = hourlyForecast.windSpeed,
                     windDirection = hourlyForecast.windDirection,
                     windGust = hourlyForecast.windGust,
-                    cloudCover = hourlyForecast.cloudCover,
+                    cloudCover = hourlyForecast.cloudCover.toDouble(),
                     precipitationChance = hourlyForecast.precipitationChance,
                     precipitationAmount = hourlyForecast.precipitationAmount,
-                    weatherCondition = hourlyForecast.weatherCondition,
-                    uvIndex = hourlyForecast.uvIndex,
-                    visibility = hourlyForecast.visibility,
-                    dewPoint = hourlyForecast.dewPoint
+                    condition = hourlyForecast.condition,
+                    description = hourlyForecast.description,
+                    icon = hourlyForecast.icon
                 )
 
                 val insertedId = database.hourlyForecastQueries.transactionWithResult {
@@ -430,13 +436,10 @@ class HourlyForecastRepository(
                 }
 
                 val newForecast = hourlyForecast.copy(id = insertedId)
-
-                logger.logInformation("Created hourly forecast with ID: $insertedId")
                 Result.success(newForecast)
             }
         } catch (e: Exception) {
-            logger.logError("Error creating hourly forecast", e)
-            Result.failure(e.message!!)
+            Result.failure("Error creating hourly forecast - ${e.message}", e)
         }
     }
 
@@ -455,29 +458,28 @@ class HourlyForecastRepository(
                             forecastTime = forecast.forecastTime,
                             temperature = forecast.temperature,
                             feelsLike = forecast.feelsLike,
-                            humidity = forecast.humidity,
-                            pressure = forecast.pressure,
+                            humidity = forecast.humidity.toDouble(),
+                            pressure = forecast.pressure.toDouble(),
+                            visibility = forecast.visibility,
+                            uvIndex = forecast.uvIndex,
                             windSpeed = forecast.windSpeed,
                             windDirection = forecast.windDirection,
                             windGust = forecast.windGust,
-                            cloudCover = forecast.cloudCover,
+                            cloudCover = forecast.cloudCover.toDouble(),
                             precipitationChance = forecast.precipitationChance,
                             precipitationAmount = forecast.precipitationAmount,
-                            weatherCondition = forecast.weatherCondition,
-                            uvIndex = forecast.uvIndex,
-                            visibility = forecast.visibility,
-                            dewPoint = forecast.dewPoint
+                            condition = forecast.condition,
+                            description = forecast.description,
+                            icon = forecast.icon
                         )
                         newForecasts.add(forecast)
                     }
                 }
 
-                logger.logInformation("Created ${hourlyForecasts.size} hourly forecasts")
                 Result.success(newForecasts)
             }
         } catch (e: Exception) {
-            logger.logError("Error creating batch hourly forecasts", e)
-            Result.failure(e.message!!)
+            Result.failure("Error creating batch hourly forecasts - ${e.message}", e)
         }
     }
 
@@ -485,31 +487,28 @@ class HourlyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.hourlyForecastQueries.update(
-                    weatherId = hourlyForecast.weatherId.toLong(),
-                    forecastTime = hourlyForecast.forecastTime,
                     temperature = hourlyForecast.temperature,
                     feelsLike = hourlyForecast.feelsLike,
-                    humidity = hourlyForecast.humidity,
-                    pressure = hourlyForecast.pressure,
+                    humidity = hourlyForecast.humidity.toDouble(),
+                    pressure = hourlyForecast.pressure.toDouble(),
+                    visibility = hourlyForecast.visibility,
+                    uvIndex = hourlyForecast.uvIndex,
                     windSpeed = hourlyForecast.windSpeed,
                     windDirection = hourlyForecast.windDirection,
                     windGust = hourlyForecast.windGust,
-                    cloudCover = hourlyForecast.cloudCover,
+                    cloudCover = hourlyForecast.cloudCover.toDouble(),
                     precipitationChance = hourlyForecast.precipitationChance,
                     precipitationAmount = hourlyForecast.precipitationAmount,
-                    weatherCondition = hourlyForecast.weatherCondition,
-                    uvIndex = hourlyForecast.uvIndex,
-                    visibility = hourlyForecast.visibility,
-                    dewPoint = hourlyForecast.dewPoint,
+                    condition = hourlyForecast.condition,
+                    description = hourlyForecast.description,
+                    icon = hourlyForecast.icon,
                     id = hourlyForecast.id.toLong()
                 )
 
-                logger.logInformation("Updated hourly forecast with ID: ${hourlyForecast.id}")
                 Result.success(hourlyForecast)
             }
         } catch (e: Exception) {
-            logger.logError("Error updating hourly forecast", e)
-            Result.failure(e.message!!)
+            Result.failure("Error updating hourly forecast - ${e.message}", e)
         }
     }
 
@@ -517,12 +516,10 @@ class HourlyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.hourlyForecastQueries.deleteById(id.toLong())
-                logger.logInformation("Deleted hourly forecast with ID: $id")
                 Result.success(true)
             }
         } catch (e: Exception) {
-            logger.logError("Error deleting hourly forecast", e)
-            Result.failure(e.message!!)
+            Result.failure("Error deleting hourly forecast - ${e.message}", e)
         }
     }
 
@@ -530,66 +527,58 @@ class HourlyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 database.hourlyForecastQueries.deleteByWeatherId(weatherId.toLong())
-                logger.logInformation("Deleted all hourly forecasts for weather ID: $weatherId")
                 Result.success(true)
             }
         } catch (e: Exception) {
-            logger.logError("Error deleting hourly forecasts by weather ID", e)
-            Result.failure(e.message!!)
+            Result.failure("Error deleting hourly forecasts by weather ID - ${e.message}", e)
         }
     }
 
     override suspend fun deleteOlderThanAsync(olderThan: Long): Result<Int> {
         return try {
             withContext(Dispatchers.IO) {
-                val deletedCount = database.hourlyForecastQueries.deleteOlderThan(olderThan).executeAsOne().toInt()
-                logger.logInformation("Deleted $deletedCount old hourly forecasts")
-                Result.success(deletedCount)
+                database.hourlyForecastQueries.deleteOlderThan(olderThan)
+                Result.success(0)
             }
         } catch (e: Exception) {
-            logger.logError("Error deleting old hourly forecasts", e)
-            Result.failure(e.message!!)
+            Result.failure("Error deleting old hourly forecasts - ${e.message}", e)
         }
     }
 
     override suspend fun deleteByWeatherAndTimeRangeAsync(weatherId: Int, startTime: Long, endTime: Long): Result<Int> {
         return try {
             withContext(Dispatchers.IO) {
-                val deletedCount = database.hourlyForecastQueries.deleteByWeatherAndTimeRange(
+                database.hourlyForecastQueries.deleteByWeatherAndTimeRange(
                     weatherId.toLong(),
                     startTime,
                     endTime
-                ).executeAsOne().toInt()
-                logger.logInformation("Deleted $deletedCount hourly forecasts in time range")
-                Result.success(deletedCount)
+                )
+                Result.success(0)
             }
         } catch (e: Exception) {
-            logger.logError("Error deleting hourly forecasts by time range", e)
-            Result.failure(e.message!!)
+            Result.failure("Error deleting hourly forecasts by time range - ${e.message}", e)
         }
     }
 
     override suspend fun getCountAsync(): Result<Int> {
         return try {
             withContext(Dispatchers.IO) {
-                val count = database.hourlyForecastQueries.getCount().executeAsOne().toInt()
-                Result.success(count)
+                val count = database.hourlyForecastQueries.getCount().executeAsOne()
+                Result.success(count.toInt())
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecast count", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecast count - ${e.message}", e)
         }
     }
 
     override suspend fun getCountByWeatherAsync(weatherId: Int): Result<Int> {
         return try {
             withContext(Dispatchers.IO) {
-                val count = database.hourlyForecastQueries.getCountByWeather(weatherId.toLong()).executeAsOne().toInt()
-                Result.success(count)
+                val count = database.hourlyForecastQueries.getCountByWeather(weatherId.toLong()).executeAsOne()
+                Result.success(count.toInt())
             }
         } catch (e: Exception) {
-            logger.logError("Error getting hourly forecast count by weather", e)
-            Result.failure(e.message!!)
+            Result.failure("Error getting hourly forecast count by weather - ${e.message}", e)
         }
     }
 
@@ -597,15 +586,11 @@ class HourlyForecastRepository(
         return try {
             withContext(Dispatchers.IO) {
                 val exists = database.hourlyForecastQueries.existsForWeatherAndTime(weatherId.toLong(), forecastTime).executeAsOne()
+
                 Result.success(exists)
             }
         } catch (e: Exception) {
-            logger.logError("Error checking if hourly forecast exists", e)
-            Result.failure(e.message!!)
+            Result.failure("Error checking if hourly forecast exists - ${e.message}", e)
         }
     }
 }
-
-
-
-

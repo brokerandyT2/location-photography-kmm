@@ -62,7 +62,7 @@ class GetLensesQueryHandler(
                     isPrime = lens.isPrime,
                     isUserCreated = lens.isUserCreated,
                     dateAdded = lens.dateAdded,
-                    displayName = lens.getDisplayName()
+                    displayName = lens.displayName
                 )
             }
 

@@ -1,138 +1,139 @@
 -- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/DailyForecast.sq
-
 selectAll:
 SELECT * FROM DailyForecast
 ORDER BY forecastDate ASC;
-
 selectById:
 SELECT * FROM DailyForecast
 WHERE id = ?;
-
 selectByWeatherId:
 SELECT * FROM DailyForecast
 WHERE weatherId = ?
 ORDER BY forecastDate ASC;
-
 selectByWeatherAndDateRange:
 SELECT * FROM DailyForecast
 WHERE weatherId = ?
-  AND forecastDate BETWEEN ? AND ?
+AND forecastDate BETWEEN ? AND ?
 ORDER BY forecastDate ASC;
-
 selectNext7Days:
 SELECT * FROM DailyForecast
 WHERE weatherId = ?
-  AND forecastDate BETWEEN ? AND ?
+AND forecastDate BETWEEN ? AND ?
 ORDER BY forecastDate ASC
 LIMIT 7;
-
 selectNext14Days:
 SELECT * FROM DailyForecast
 WHERE weatherId = ?
-  AND forecastDate BETWEEN ? AND ?
+AND forecastDate BETWEEN ? AND ?
 ORDER BY forecastDate ASC
 LIMIT 14;
-
-selectForDate:
+selectByDate:
 SELECT * FROM DailyForecast
 WHERE weatherId = ? AND forecastDate = ?;
-
+selectCurrent:
+SELECT * FROM DailyForecast
+WHERE weatherId = ?
+AND forecastDate >= ?
+ORDER BY forecastDate ASC
+LIMIT 1;
 selectBestConditionsInRange:
 SELECT * FROM DailyForecast
 WHERE weatherId = ?
-  AND forecastDate BETWEEN ? AND ?
-  AND cloudCover IS NOT NULL
-  AND precipitationChance IS NOT NULL
+AND forecastDate BETWEEN ? AND ?
+AND cloudCover IS NOT NULL
+AND precipitationChance IS NOT NULL
+ORDER BY
+precipitationChance ASC,
+cloudCover ASC,
+forecastDate ASC
+LIMIT ?;
+selectBestPhotographyDays:
+SELECT * FROM DailyForecast
+WHERE weatherId = ?
+  AND forecastDate >= ?
+  AND forecastDate <= ?
+  AND cloudCover < ?
+  AND precipitationChance < ?
 ORDER BY 
   precipitationChance ASC,
   cloudCover ASC,
   forecastDate ASC
 LIMIT ?;
-
 selectClearDays:
 SELECT * FROM DailyForecast
 WHERE weatherId = ?
-  AND forecastDate BETWEEN ? AND ?
-  AND cloudCover IS NOT NULL
-  AND cloudCover < 30
-  AND precipitationChance IS NOT NULL
-  AND precipitationChance < 20
+AND forecastDate BETWEEN ? AND ?
+AND cloudCover IS NOT NULL
+AND cloudCover < 30
+AND precipitationChance IS NOT NULL
+AND precipitationChance < 20
 ORDER BY forecastDate ASC;
-
--- Get daily forecasts by location (joins with Weather table)
+selectSunriseSunset:
+SELECT sunrise, sunset FROM DailyForecast
+WHERE weatherId = ? AND forecastDate = ?;
+selectMoonPhase:
+SELECT moonPhase FROM DailyForecast
+WHERE weatherId = ? AND forecastDate = ?;
 selectByLocationId:
 SELECT df.*
 FROM DailyForecast df
 INNER JOIN Weather w ON df.weatherId = w.id
 WHERE w.locationId = ?
-  AND w.isDeleted = 0
+AND w.isDeleted = 0
 ORDER BY df.forecastDate ASC;
-
 selectByLocationAndDateRange:
 SELECT df.*
 FROM DailyForecast df
 INNER JOIN Weather w ON df.weatherId = w.id
 WHERE w.locationId = ?
-  AND w.isDeleted = 0
-  AND df.forecastDate BETWEEN ? AND ?
+AND w.isDeleted = 0
+AND df.forecastDate BETWEEN ? AND ?
 ORDER BY df.forecastDate ASC;
-
 insert:
 INSERT INTO DailyForecast (
-  weatherId, forecastDate, minTemperature, maxTemperature, humidity, pressure,
-  uvIndex, windSpeed, windDirection, windGust, cloudCover, precipitationChance,
-  precipitationAmount, condition, description, icon, sunrise, sunset, moonPhase, moonrise, moonset
+weatherId, forecastDate, minTemperature, maxTemperature, humidity, pressure,
+uvIndex, windSpeed, windDirection, windGust, cloudCover, precipitationChance,
+precipitationAmount, condition, description, icon, sunrise, sunset, moonPhase, moonrise, moonset
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-
 insertBatch:
 INSERT INTO DailyForecast (
-  weatherId, forecastDate, minTemperature, maxTemperature, humidity, pressure,
-  uvIndex, windSpeed, windDirection, windGust, cloudCover, precipitationChance,
-  precipitationAmount, condition, description, icon, sunrise, sunset, moonPhase, moonrise, moonset
+weatherId, forecastDate, minTemperature, maxTemperature, humidity, pressure,
+uvIndex, windSpeed, windDirection, windGust, cloudCover, precipitationChance,
+precipitationAmount, condition, description, icon, sunrise, sunset, moonPhase, moonrise, moonset
 ) VALUES ?;
-
 update:
 UPDATE DailyForecast
 SET minTemperature = ?, maxTemperature = ?, humidity = ?, pressure = ?, uvIndex = ?,
-    windSpeed = ?, windDirection = ?, windGust = ?, cloudCover = ?, precipitationChance = ?,
-    precipitationAmount = ?, condition = ?, description = ?, icon = ?, sunrise = ?, 
-    sunset = ?, moonPhase = ?, moonrise = ?, moonset = ?
+windSpeed = ?, windDirection = ?, windGust = ?, cloudCover = ?, precipitationChance = ?,
+precipitationAmount = ?, condition = ?, description = ?, icon = ?, sunrise = ?,
+sunset = ?, moonPhase = ?, moonrise = ?, moonset = ?
 WHERE id = ?;
-
 upsertByWeatherAndDate:
 INSERT OR REPLACE INTO DailyForecast (
-  id, weatherId, forecastDate, minTemperature, maxTemperature, humidity, pressure,
-  uvIndex, windSpeed, windDirection, windGust, cloudCover, precipitationChance,
-  precipitationAmount, condition, description, icon, sunrise, sunset, moonPhase, moonrise, moonset
+id, weatherId, forecastDate, minTemperature, maxTemperature, humidity, pressure,
+uvIndex, windSpeed, windDirection, windGust, cloudCover, precipitationChance,
+precipitationAmount, condition, description, icon, sunrise, sunset, moonPhase, moonrise, moonset
 ) VALUES (
-  (SELECT id FROM DailyForecast WHERE weatherId = ? AND forecastDate = ?),
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+(SELECT id FROM DailyForecast WHERE weatherId = ? AND forecastDate = ?),
+?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );
-
 deleteById:
 DELETE FROM DailyForecast
 WHERE id = ?;
-
 deleteByWeatherId:
 DELETE FROM DailyForecast
 WHERE weatherId = ?;
-
 deleteOlderThan:
 DELETE FROM DailyForecast
 WHERE forecastDate < ?;
-
 deleteByWeatherAndDateRange:
 DELETE FROM DailyForecast
 WHERE weatherId = ?
-  AND forecastDate BETWEEN ? AND ?;
-
+AND forecastDate BETWEEN ? AND ?;
 getCount:
 SELECT COUNT(*) FROM DailyForecast;
-
 getCountByWeather:
 SELECT COUNT(*) FROM DailyForecast
 WHERE weatherId = ?;
-
 existsForWeatherAndDate:
 SELECT COUNT(*) > 0 FROM DailyForecast
 WHERE weatherId = ? AND forecastDate = ?;
