@@ -3,7 +3,8 @@ package com.x3squaredcircles.photography.domain.entities
 
 import com.x3squaredcircles.core.domain.common.Entity
 import kotlinx.serialization.Serializable
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
+
 /**
  * Represents a photography-specific configuration setting for the application.
  * Settings use a key-value pattern and support type-safe value retrieval.
@@ -20,9 +21,9 @@ data class Setting(
     /**
      * Gets the timestamp as a LocalDateTime in the current system timezone.
      */
-    val timestampDateTime: kotlinx.datetime.LocalDateTime
-        get() = kotlinx.datetime.Instant.fromEpochMilliseconds(timestamp)
-            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+    val timestampDateTime: LocalDateTime
+        get() = Instant.fromEpochMilliseconds(timestamp)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
     
     /**
      * Gets the value as a Boolean. Returns false if conversion fails.
@@ -85,7 +86,7 @@ data class Setting(
     fun updateValue(newValue: String): Setting {
         return copy(
             value = newValue,
-            timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+            timestamp = Clock.System.now().toEpochMilliseconds()
         )
     }
     
@@ -119,9 +120,11 @@ data class Setting(
             value: String,
             description: String = ""
         ): Setting {
-            val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+            require(key.isNotBlank()) { "Setting key cannot be blank" }
+            
+            val now = Clock.System.now().toEpochMilliseconds()
             return Setting(
-                key = key,
+                key = key.trim(),
                 value = value,
                 description = description,
                 timestamp = now
@@ -149,25 +152,18 @@ data class Setting(
             return create(key, value.toString(), description)
         }
         
-        // Photography-specific setting keys
+        // Common photography setting keys
         object Keys {
-            const val HEMISPHERE = "Hemisphere"
-            const val TIME_FORMAT = "TimeFormat"
-            const val DATE_FORMAT = "DateFormat"
-            const val EMAIL = "Email"
-            const val WIND_DIRECTION = "WindDirection"
-            const val TEMPERATURE_FORMAT = "TemperatureFormat"
-            const val SUBSCRIPTION = "Subscription"
-            const val ADD_LOCATION_VIEWED = "AddLocationViewed"
-            const val LIST_LOCATIONS_VIEWED = "ListLocationsViewed"
-            const val EDIT_LOCATION_VIEWED = "EditLocationViewed"
-            const val WEATHER_VIEWED = "WeatherViewed"
-            const val SETTINGS_VIEWED = "SettingsViewed"
-            const val SUN_LOCATION_VIEWED = "SunLocationViewed"
-            const val SUN_CALCULATION_VIEWED = "SunCalculationViewed"
-            const val EXPOSURE_CALCULATION_VIEWED = "ExposureCalculationViewed"
-            const val SCENE_EVALUATION_VIEWED = "SceneEvaluationViewed"
-            const val SUBSCRIPTION_EXPIRATION = "SubscriptionExpiration"
+            const val CAMERA_FLASH_ENABLED = "camera_flash_enabled"
+            const val DEFAULT_ISO = "default_iso"
+            const val PREFERRED_ASPECT_RATIO = "preferred_aspect_ratio"
+            const val AUTO_SAVE_LOCATION = "auto_save_location"
+            const val WEATHER_UPDATE_INTERVAL = "weather_update_interval"
+            const val NOTIFICATION_ENABLED = "notification_enabled"
+            const val UNIT_SYSTEM = "unit_system" // metric/imperial
+            const val LANGUAGE_CODE = "language_code"
+            const val THEME_MODE = "theme_mode" // light/dark/auto
+            const val GPS_PRECISION = "gps_precision"
         }
     }
 }

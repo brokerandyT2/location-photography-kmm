@@ -32,6 +32,8 @@ data class TipType(
          * Creates a new TipType with default internationalization.
          */
         fun create(name: String, i8n: String = "en-US"): TipType {
+            require(name.isNotBlank()) { "Tip type name cannot be blank" }
+            
             return TipType(
                 name = name.trim(),
                 i8n = i8n

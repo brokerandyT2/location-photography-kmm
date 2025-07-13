@@ -104,6 +104,10 @@ data class Tip(
             iso: String = "",
             i8n: String = "en-US"
         ): Tip {
+            require(tipTypeId > 0) { "Tip type ID must be positive" }
+            require(title.isNotBlank()) { "Tip title cannot be blank" }
+            require(content.isNotBlank()) { "Tip content cannot be blank" }
+            
             return Tip(
                 tipTypeId = tipTypeId,
                 title = title.trim(),
@@ -116,9 +120,9 @@ data class Tip(
         }
         
         /**
-         * Creates a tip with just content (no camera settings).
+         * Creates a basic tip without camera settings.
          */
-        fun createSimple(
+        fun createBasic(
             tipTypeId: Int,
             title: String,
             content: String,

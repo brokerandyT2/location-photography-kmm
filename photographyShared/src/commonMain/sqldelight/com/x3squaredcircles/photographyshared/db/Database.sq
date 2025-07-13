@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS Location (
     latitude REAL NOT NULL,
     longitude REAL NOT NULL,
     photoPath TEXT DEFAULT NULL,
-    isDeleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL,
     updatedAt INTEGER NOT NULL
 );
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS Weather (
     timezone TEXT NOT NULL,
     timezoneOffset INTEGER NOT NULL,
     lastUpdate INTEGER NOT NULL,
-    isDeleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (locationId) REFERENCES Location(id) ON DELETE CASCADE
 );
 
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS CameraBody (
     sensorWidth REAL NOT NULL,
     sensorHeight REAL NOT NULL,
     mountType TEXT NOT NULL,
-    isUserCreated INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isUserCreated INTEGER NOT NULL DEFAULT 0,
     dateAdded INTEGER NOT NULL
 );
 
@@ -80,8 +80,8 @@ CREATE TABLE IF NOT EXISTS Lens (
     maxMM REAL NOT NULL,
     minFStop REAL NOT NULL,
     maxFStop REAL NOT NULL,
-    isPrime INTEGER AS Boolean NOT NULL DEFAULT 0,
-    isUserCreated INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isPrime INTEGER NOT NULL DEFAULT 0,
+    isUserCreated INTEGER NOT NULL DEFAULT 0,
     nameForLens TEXT NOT NULL DEFAULT '',
     dateAdded INTEGER NOT NULL
 );
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS Subscription (
     transactionId TEXT NOT NULL UNIQUE,
     purchaseToken TEXT NOT NULL UNIQUE,
     productId TEXT NOT NULL,
-    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    isActive INTEGER NOT NULL DEFAULT 1,
     expirationDate INTEGER NOT NULL,
     purchaseDate INTEGER NOT NULL,
     lastVerified INTEGER NOT NULL

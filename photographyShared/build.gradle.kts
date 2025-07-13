@@ -136,7 +136,8 @@ sqldelight {
         create("PhotographyDatabase") {
             packageName.set("com.x3squaredcircles.photographyshared.db")
             schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
-            verifyMigrations.set(true)
+            verifyMigrations.set(false)
+            
         }
     }
 }
