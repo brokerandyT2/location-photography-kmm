@@ -51,7 +51,7 @@ kotlin {
                 
                 // UUID for entity generation
                 implementation("com.benasher44:uuid:0.8.1")
-                
+
                 // TODO: Add astronomy library back once repository is configured
                 // implementation("io.github.cosinekitty:astronomy:2.1.19")
                 // TODO: Add atomicfu back with proper compiler plugin configuration if needed
@@ -86,7 +86,7 @@ kotlin {
                 
                 // Color analysis libraries
                 implementation("androidx.palette:palette-ktx:1.0.0")
-                
+
                 // Math/calculation libraries for exposure
                 implementation("org.apache.commons:commons-math3:3.6.1")
             }
@@ -152,4 +152,7 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+}
+dependencies {
+    implementation("androidx.exifinterface:exifinterface:1.4.1")
 }

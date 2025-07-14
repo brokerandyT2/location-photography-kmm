@@ -1,5 +1,5 @@
-// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photographyshared/handlers/CreateCameraBodyCommandHandler.kt
-package com.x3squaredcircles.photographyshared.handlers
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/handlers/CreateCameraBodyCommandHandler.kt
+package com.x3squaredcircles.photography.handlers
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.mediator.ICommandHandler
 import com.x3squaredcircles.photography.commands.CreateCameraBodyCommand

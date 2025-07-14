@@ -97,6 +97,18 @@ CREATE TABLE IF NOT EXISTS LensCameraCompatibility (
     UNIQUE(lensId, cameraBodyId)
 );
 
+-- Phone Camera Profiles (for phone photography calibration)
+CREATE TABLE IF NOT EXISTS PhoneCameraProfile (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    phoneModel TEXT NOT NULL,
+    mainLensFocalLength REAL NOT NULL,
+    mainLensFOV REAL NOT NULL,
+    ultraWideFocalLength REAL DEFAULT NULL,
+    telephotoFocalLength REAL DEFAULT NULL,
+    dateCalibrated INTEGER NOT NULL,
+    isActive INTEGER NOT NULL DEFAULT 1
+);
+
 -- Subscription tracking
 CREATE TABLE IF NOT EXISTS Subscription (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -187,6 +199,10 @@ CREATE INDEX IF NOT EXISTS idx_lens_usercreated ON Lens(isUserCreated);
 
 CREATE INDEX IF NOT EXISTS idx_compatibility_lens ON LensCameraCompatibility(lensId);
 CREATE INDEX IF NOT EXISTS idx_compatibility_camera ON LensCameraCompatibility(cameraBodyId);
+
+CREATE INDEX IF NOT EXISTS idx_phonecameraprofile_model ON PhoneCameraProfile(phoneModel);
+CREATE INDEX IF NOT EXISTS idx_phonecameraprofile_active ON PhoneCameraProfile(isActive);
+CREATE INDEX IF NOT EXISTS idx_phonecameraprofile_date ON PhoneCameraProfile(dateCalibrated);
 
 CREATE INDEX IF NOT EXISTS idx_subscription_user ON Subscription(userId);
 CREATE INDEX IF NOT EXISTS idx_subscription_active ON Subscription(isActive);

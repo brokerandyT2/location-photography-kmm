@@ -1,10 +1,11 @@
-// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photographyshared/infrastructure/repositories/LensRepository.kt
-package com.x3squaredcircles.photographyshared.infrastructure.repositories
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/infrastructure/repositories/LensRepository.kt
+package com.x3squaredcircles.photography.infrastructure.repositories
 import com.x3squaredcircles.core.Result
 import com.x3squaredcircles.core.infrastructure.services.ILoggingService
 
 import com.x3squaredcircles.photography.domain.entities.Lens
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
+import com.x3squaredcircles.photographyshared.infrastructure.repositories.ILensRepository
 
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers

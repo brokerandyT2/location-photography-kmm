@@ -1,4 +1,4 @@
-// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photographyshared/infrastructure/services/IExifService.kt
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/infrastructure/services/IExifService.kt
 package com.x3squaredcircles.photographyshared.infrastructure.services
 
 import com.x3squaredcircles.core.Result
