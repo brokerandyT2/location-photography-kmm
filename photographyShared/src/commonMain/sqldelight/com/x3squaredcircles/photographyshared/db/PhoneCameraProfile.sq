@@ -1,0 +1,62 @@
+-- photographyShared/src/commonMain/sqldelight/com/x3squaredcircles/photographyshared/db/PhoneCameraProfile.sq
+
+selectAll:
+SELECT * FROM PhoneCameraProfile
+ORDER BY dateCalibrated DESC;
+
+selectById:
+SELECT * FROM PhoneCameraProfile
+WHERE id = ?;
+
+selectActive:
+SELECT * FROM PhoneCameraProfile
+WHERE isActive = 1
+ORDER BY dateCalibrated DESC
+LIMIT 1;
+
+selectByPhoneModel:
+SELECT * FROM PhoneCameraProfile
+WHERE phoneModel LIKE '%' || ? || '%'
+ORDER BY dateCalibrated DESC;
+
+insert:
+INSERT INTO PhoneCameraProfile (
+    phoneModel,
+    mainLensFocalLength,
+    mainLensFOV,
+    ultraWideFocalLength,
+    telephotoFocalLength,
+    dateCalibrated,
+    isActive
+) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+update:
+UPDATE PhoneCameraProfile
+SET phoneModel = ?,
+    mainLensFocalLength = ?,
+    mainLensFOV = ?,
+    ultraWideFocalLength = ?,
+    telephotoFocalLength = ?,
+    dateCalibrated = ?,
+    isActive = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM PhoneCameraProfile
+WHERE id = ?;
+
+setActiveProfile:
+UPDATE PhoneCameraProfile
+SET isActive = 1
+WHERE id = ?;
+
+deactivateAllProfiles:
+UPDATE PhoneCameraProfile
+SET isActive = 0;
+
+getCount:
+SELECT COUNT(*) FROM PhoneCameraProfile;
+
+getActiveCount:
+SELECT COUNT(*) FROM PhoneCameraProfile
+WHERE isActive = 1;
