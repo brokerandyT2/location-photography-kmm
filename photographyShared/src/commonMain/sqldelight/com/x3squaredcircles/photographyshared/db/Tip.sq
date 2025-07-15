@@ -63,3 +63,9 @@ SELECT COUNT(*) FROM Tip;
 getCountByType:
 SELECT COUNT(*) FROM Tip
 WHERE tipTypeId = ?;
+
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

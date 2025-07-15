@@ -40,3 +40,9 @@ WHERE name = ? AND id != :excludeId;
 
 getCount:
 SELECT COUNT(*) FROM TipType;
+
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

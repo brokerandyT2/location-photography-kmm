@@ -39,8 +39,10 @@ WHERE (:includeDeleted = 1 OR isDeleted = 0)
 selectNearby:
 SELECT * FROM Location
 WHERE isDeleted = 0
-  AND latitude BETWEEN :minLat AND :maxLat
-  AND longitude BETWEEN :minLon AND :maxLon
+  AND latitude > :minLat AND
+  latitude < :maxLat
+  AND longitude > :minLon AND
+  longitude < :maxLon
 ORDER BY 
   ((latitude - :centerLat) * (latitude - :centerLat) + 
    (longitude - :centerLon) * (longitude - :centerLon)) ASC;
@@ -117,8 +119,10 @@ WHERE id = ?;
 selectByBounds:
 SELECT * FROM Location
 WHERE isDeleted = 0
-  AND latitude BETWEEN :southLat AND :northLat
-  AND longitude BETWEEN :westLon AND :eastLon
+  AND latitude > :southLat AND
+  latitude < :northLat
+  AND longitude > :westLon AND
+  longitude < :eastLon
 ORDER BY createdAt DESC;
 
 -- Get recently created locations
@@ -158,3 +162,9 @@ cleanupDeleted:
 DELETE FROM Location
 WHERE isDeleted = 1 
   AND updatedAt < ?;
+
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

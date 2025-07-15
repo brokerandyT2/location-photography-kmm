@@ -83,5 +83,8 @@ getCount:
 SELECT COUNT(*) FROM Weather
 WHERE isDeleted = 0;
 
+  changes:
+SELECT changes();
+
 lastInsertRowId:
 SELECT last_insert_rowid();

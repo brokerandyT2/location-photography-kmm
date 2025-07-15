@@ -124,3 +124,9 @@ WHERE weatherId = ?;
 existsForWeatherAndTime:
 SELECT COUNT(*) > 0 FROM HourlyForecast
 WHERE weatherId = ? AND forecastTime = ?;
+
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

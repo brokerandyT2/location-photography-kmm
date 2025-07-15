@@ -69,3 +69,8 @@ SELECT COUNT(*) FROM Subscription;
 getActiveCount:
 SELECT COUNT(*) FROM Subscription
 WHERE isActive = 1 AND expirationDate > ?;
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

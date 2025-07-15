@@ -48,3 +48,9 @@ WHERE lensId = ? AND cameraBodyId = ?;
 
 getCount:
 SELECT COUNT(*) FROM LensCameraCompatibility;
+
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

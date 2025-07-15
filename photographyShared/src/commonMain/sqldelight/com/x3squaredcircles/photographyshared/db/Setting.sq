@@ -55,3 +55,9 @@ WHERE key = ?;
 
 getCount:
 SELECT COUNT(*) FROM Setting;
+
+changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();

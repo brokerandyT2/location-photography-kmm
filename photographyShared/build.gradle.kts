@@ -60,6 +60,7 @@ kotlin {
                 
                 // UUID generation for entities
                 implementation("com.benasher44:uuid:0.8.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${rootProject.extra["coroutines_version"]}")
             }
         }
         

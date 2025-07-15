@@ -137,3 +137,9 @@ WHERE weatherId = ?;
 existsForWeatherAndDate:
 SELECT COUNT(*) > 0 FROM DailyForecast
 WHERE weatherId = ? AND forecastDate = ?;
+
+  changes:
+SELECT changes();
+
+lastInsertRowId:
+SELECT last_insert_rowid();
