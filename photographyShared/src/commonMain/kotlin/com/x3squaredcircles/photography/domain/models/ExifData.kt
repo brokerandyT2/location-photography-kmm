@@ -4,14 +4,14 @@ package com.x3squaredcircles.photography.domain.models
 import kotlinx.datetime.Instant
 
 data class ExifData(
-    val cameraMake: String? = null,
-    val cameraModel: String? = null,
-    val dateTaken: Instant? = null,
-    val focalLength: Double? = null,
-    val aperture: Double? = null,
-    val imageWidth: Int? = null,
-    val imageHeight: Int? = null,
-    val lensModel: String? = null
+    var cameraMake: String? = null,
+    var cameraModel: String? = null,
+    var dateTaken: Instant? = null,
+    var focalLength: Double? = null,
+    var aperture: Double? = null,
+    var imageWidth: Int? = null,
+    var imageHeight: Int? = null,
+    var lensModel: String? = null
 ) {
     val hasValidFocalLength: Boolean
         get() = focalLength != null && focalLength!! > 0

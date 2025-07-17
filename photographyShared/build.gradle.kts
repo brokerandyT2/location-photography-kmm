@@ -57,7 +57,7 @@ kotlin {
                 
                 // Logging
                 implementation("co.touchlab:kermit:1.2.2")
-                
+                implementation("com.drewnoakes:metadata-extractor:2.19.0")
                 // UUID generation for entities
                 implementation("com.benasher44:uuid:0.8.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${rootProject.extra["coroutines_version"]}")
