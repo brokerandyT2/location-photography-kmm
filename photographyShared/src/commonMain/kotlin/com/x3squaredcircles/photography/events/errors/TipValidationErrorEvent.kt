@@ -1,17 +1,18 @@
-// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/events/errors/ValidationErrorEvent.kt
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/events/errors/TipValidationErrorEvent.kt
 package com.x3squaredcircles.photography.events.errors
 
-import com.x3squaredcircles.photography.events.errors.DomainErrorEvent
-
-
 /**
- * Event representing validation errors that occurred during processing
+ * Event representing tip-specific validation errors that occurred during processing
  */
-class ValidationErrorEvent(
+class TipValidationErrorEvent(
     /**
-     * The type of entity that failed validation
+     * The ID of the tip that failed validation (null for new tips)
      */
-    val entityType: String,
+    val tipId: Int?,
+    /**
+     * The tip type ID associated with the validation error
+     */
+    val tipTypeId: Int,
     /**
      * Dictionary of validation errors grouped by property name
      */
@@ -22,8 +23,9 @@ class ValidationErrorEvent(
     /**
      * Constructor that accepts a collection of Error objects
      */
-    constructor(entityType: String, errors: List<Error>, source: String) : this(
-        entityType,
+    constructor(tipId: Int?, tipTypeId: Int, errors: List<Error>, source: String) : this(
+        tipId,
+        tipTypeId,
         errors.filter { !it.message.isNullOrBlank() }
             .groupBy { it.message!! }
             .mapValues { entry -> entry.value.map { it.message!! } },
@@ -32,17 +34,21 @@ class ValidationErrorEvent(
 
     override fun getResourceKey(): String {
         return if (validationErrors.size == 1) {
-            "Validation_Error_Single"
+            "Tip_Validation_Error_Single"
         } else {
-            "Validation_Error_Multiple"
+            "Tip_Validation_Error_Multiple"
         }
     }
 
     override fun getParameters(): Map<String, Any> {
         val parameters = mutableMapOf<String, Any>(
-            "EntityType" to entityType,
+            "TipTypeId" to tipTypeId,
             "ErrorCount" to validationErrors.size
         )
+
+        tipId?.let {
+            parameters["TipId"] = it
+        }
 
         if (validationErrors.size == 1) {
             val firstError = validationErrors.entries.first()

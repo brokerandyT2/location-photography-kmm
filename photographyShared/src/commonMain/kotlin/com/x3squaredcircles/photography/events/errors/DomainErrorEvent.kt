@@ -6,6 +6,16 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
+ * Defines the severity levels for error events
+ */
+enum class ErrorSeverity {
+    Info,
+    Warning,
+    Error,
+    Critical
+}
+
+/**
  * Base class for all domain-specific error events that can be published through MediatR
  */
 abstract class DomainErrorEvent(
@@ -40,14 +50,4 @@ abstract class DomainErrorEvent(
      * Gets the error severity level
      */
     open val severity: ErrorSeverity = ErrorSeverity.Error
-}
-
-/**
- * Defines the severity levels for error events
- */
-enum class ErrorSeverity {
-    Info,
-    Warning,
-    Error,
-    Critical
 }
