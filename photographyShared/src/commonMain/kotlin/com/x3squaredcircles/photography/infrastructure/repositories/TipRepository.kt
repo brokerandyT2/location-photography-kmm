@@ -2,6 +2,7 @@
 package com.x3squaredcircles.photography.infrastructure.repositories
 
 import com.x3squaredcircles.core.domain.entities.Tip
+import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipRepository
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.TipCacheType
@@ -22,14 +23,14 @@ class TipRepository(
     private val cacheMutex = Mutex()
     private val cacheExpiration = 60.minutes
 
-    override suspend fun getByIdAsync(id: Int): Tip? {
+    override suspend fun getByIdAsync(id: Int): Result<Tip?> {
         return executeWithExceptionMapping("GetById") {
             val entity = database.tipQueries.selectById(id.toLong()).executeAsOneOrNull()
             entity?.let { mapToDomain(it) }
         }
     }
 
-    override suspend fun getAllAsync(): List<Tip> {
+    override suspend fun getAllAsync(): Result<List<Tip>> {
         return executeWithExceptionMapping("GetAll") {
             database.tipQueries.selectAll()
                 .executeAsList()
@@ -37,7 +38,7 @@ class TipRepository(
         }
     }
 
-    override suspend fun getByTypeIdAsync(tipTypeId: Int): List<Tip> {
+    override suspend fun getByTypeIdAsync(tipTypeId: Int): Result<List<Tip>> {
         return executeWithExceptionMapping("GetByTypeId") {
             database.tipQueries.selectByTypeId(tipTypeId.toLong())
                 .executeAsList()
@@ -45,7 +46,7 @@ class TipRepository(
         }
     }
 
-    override suspend fun getWithCameraSettingsAsync(): List<Tip> {
+    override suspend fun getWithCameraSettingsAsync(): Result<List<Tip>> {
         return executeWithExceptionMapping("GetWithCameraSettings") {
             database.tipQueries.selectWithCameraSettings()
                 .executeAsList()
@@ -53,7 +54,7 @@ class TipRepository(
         }
     }
 
-    override suspend fun searchByTextAsync(searchTerm: String): List<Tip> {
+    override suspend fun searchByTextAsync(searchTerm: String): Result<List<Tip>> {
         return executeWithExceptionMapping("SearchByText") {
             database.tipQueries.selectBySearch(
                 searchTerm,
@@ -65,7 +66,7 @@ class TipRepository(
         }
     }
 
-    override suspend fun getRandomAsync(count: Int): List<Tip> {
+    override suspend fun getRandomAsync(count: Int): Result<List<Tip>> {
         return executeWithExceptionMapping("GetRandom") {
             database.tipQueries.selectRandom(count.toLong())
                 .executeAsList()
@@ -77,38 +78,38 @@ class TipRepository(
         pageNumber: Int,
         pageSize: Int,
         tipTypeId: Int?
-    ): List<Tip> {
+    ): Result<List<Tip>> {
         return executeWithExceptionMapping("GetPaged") {
-            if (tipTypeId != null) {
+            val offset = (pageNumber - 1) * pageSize
+            val tips = if (tipTypeId != null) {
                 database.tipQueries.selectByTypeId(tipTypeId.toLong())
                     .executeAsList()
-                    .drop((pageNumber - 1) * pageSize)
+                    .drop(offset)
                     .take(pageSize)
-                    .map { mapToDomain(it) }
             } else {
                 database.tipQueries.selectAll()
                     .executeAsList()
-                    .drop((pageNumber - 1) * pageSize)
+                    .drop(offset)
                     .take(pageSize)
-                    .map { mapToDomain(it) }
             }
+            tips.map { mapToDomain(it) }
         }
     }
 
-    override suspend fun getTotalCountAsync(): Long {
+    override suspend fun getTotalCountAsync(): Result<Long> {
         return executeWithExceptionMapping("GetTotalCount") {
             database.tipQueries.getCount().executeAsOne()
         }
     }
 
-    override suspend fun getCountByTypeAsync(tipTypeId: Int): Long {
+    override suspend fun getCountByTypeAsync(tipTypeId: Int): Result<Long> {
         return executeWithExceptionMapping("GetCountByType") {
             database.tipQueries.getCountByType(tipTypeId.toLong()).executeAsOne()
         }
     }
 
-    override suspend fun addAsync(tip: Tip): Tip {
-        return executeWithExceptionMapping("Add") {
+    override suspend fun createAsync(tip: Tip): Result<Tip> {
+        return executeWithExceptionMapping("Create") {
             database.tipQueries.insert(
                 tipTypeId = tip.tipTypeId.toLong(),
                 title = tip.title,
@@ -136,8 +137,8 @@ class TipRepository(
         }
     }
 
-    override suspend fun updateAsync(tip: Tip) {
-        executeWithExceptionMapping("Update") {
+    override suspend fun updateAsync(tip: Tip): Result<Unit> {
+        return executeWithExceptionMapping("Update") {
             database.tipQueries.update(
                 tipTypeId = tip.tipTypeId.toLong(),
                 title = tip.title,
@@ -158,8 +159,8 @@ class TipRepository(
         }
     }
 
-    override suspend fun deleteAsync(tip: Tip) {
-        executeWithExceptionMapping("Delete") {
+    override suspend fun deleteAsync(tip: Tip): Result<Unit> {
+        return executeWithExceptionMapping("Delete") {
             database.tipQueries.deleteById(tip.id.toLong())
             val rowsAffected = database.tipQueries.changes().executeAsOne()
 
@@ -171,13 +172,13 @@ class TipRepository(
         }
     }
 
-    override suspend fun deleteByTypeIdAsync(tipTypeId: Int): Int {
+    override suspend fun deleteByTypeIdAsync(tipTypeId: Int): Result<Int> {
         return executeWithExceptionMapping("DeleteByTypeId") {
             database.tipQueries.deleteByTypeId(tipTypeId.toLong())
-            val rowsAffected = database.tipQueries.changes().executeAsOne()
+            val rowsAffected = database.tipQueries.changes().executeAsOne().toInt()
 
             logger.i { "Deleted $rowsAffected tips for tip type ID $tipTypeId" }
-            rowsAffected.toInt()
+            rowsAffected
         }
     }
 
@@ -186,8 +187,8 @@ class TipRepository(
         fstop: String,
         shutterSpeed: String,
         iso: String
-    ) {
-        executeWithExceptionMapping("UpdateCameraSettings") {
+    ): Result<Unit> {
+        return executeWithExceptionMapping("UpdateCameraSettings") {
             database.tipQueries.updateCameraSettings(
                 fstop = fstop,
                 shutterSpeed = shutterSpeed,
@@ -204,20 +205,20 @@ class TipRepository(
         }
     }
 
-    override suspend fun existsByIdAsync(id: Int): Boolean {
+    override suspend fun existsByIdAsync(id: Int): Result<Boolean> {
         return executeWithExceptionMapping("ExistsById") {
             database.tipQueries.selectById(id.toLong()).executeAsOneOrNull() != null
         }
     }
 
-    override suspend fun createBulkAsync(tips: List<Tip>): List<Tip> {
+    override suspend fun createBulkAsync(tips: List<Tip>): Result<List<Tip>> {
         return executeWithExceptionMapping("CreateBulk") {
             if (tips.isEmpty()) return@executeWithExceptionMapping tips
 
             database.transactionWithResult {
                 val result = mutableListOf<Tip>()
 
-                tips.forEach { tip ->
+                for (tip in tips) {
                     database.tipQueries.insert(
                         tipTypeId = tip.tipTypeId.toLong(),
                         title = tip.title,
@@ -242,20 +243,20 @@ class TipRepository(
                     result.add(savedTip)
                 }
 
-                logger.i { "Bulk created ${result.size} tips" }
+                logger.i { "Created ${result.size} tips in bulk" }
                 result
             }
         }
     }
 
-    override suspend fun updateBulkAsync(tips: List<Tip>): Int {
+    override suspend fun updateBulkAsync(tips: List<Tip>): Result<Int> {
         return executeWithExceptionMapping("UpdateBulk") {
             if (tips.isEmpty()) return@executeWithExceptionMapping 0
 
             database.transactionWithResult {
                 var updatedCount = 0
 
-                tips.forEach { tip ->
+                for (tip in tips) {
                     database.tipQueries.update(
                         tipTypeId = tip.tipTypeId.toLong(),
                         title = tip.title,
@@ -267,41 +268,40 @@ class TipRepository(
                         id = tip.id.toLong()
                     )
                     val rowsAffected = database.tipQueries.changes().executeAsOne()
-
-                    if (rowsAffected > 0) {
+                    if (rowsAffected > 0L) {
                         updatedCount++
                     }
                 }
 
-                logger.i { "Bulk updated $updatedCount tips" }
+                logger.i { "Updated $updatedCount tips in bulk" }
                 updatedCount
             }
         }
     }
 
-    override suspend fun deleteBulkAsync(tipIds: List<Int>): Int {
+    override suspend fun deleteBulkAsync(tipIds: List<Int>): Result<Int> {
         return executeWithExceptionMapping("DeleteBulk") {
             if (tipIds.isEmpty()) return@executeWithExceptionMapping 0
 
             database.transactionWithResult {
                 var deletedCount = 0
 
-                tipIds.forEach { id ->
+                for (id in tipIds) {
                     database.tipQueries.deleteById(id.toLong())
                     val rowsAffected = database.tipQueries.changes().executeAsOne()
-                    if (rowsAffected > 0) {
+                    if (rowsAffected > 0L) {
                         deletedCount++
                     }
                 }
 
-                logger.i { "Bulk deleted $deletedCount tips" }
+                logger.i { "Deleted $deletedCount tips in bulk" }
                 deletedCount
             }
         }
     }
 
-    override suspend fun getTipsByLocalizationAsync(localization: String): List<Tip> {
-        return executeWithExceptionMapping("GetTipsByLocalization") {
+    override suspend fun getTipsByLocalizationAsync(localization: String): Result<List<Tip>> {
+        return executeWithExceptionMapping("GetByLocalization") {
             database.tipQueries.selectAll()
                 .executeAsList()
                 .filter { it.i8n == localization }
@@ -309,8 +309,8 @@ class TipRepository(
         }
     }
 
-    override suspend fun updateLocalizationAsync(id: Int, localization: String) {
-        executeWithExceptionMapping("UpdateLocalization") {
+    override suspend fun updateLocalizationAsync(id: Int, localization: String): Result<Unit> {
+        return executeWithExceptionMapping("UpdateLocalization") {
             val tip = database.tipQueries.selectById(id.toLong()).executeAsOneOrNull()
                 ?: throw IllegalArgumentException("Tip with ID $id not found")
 
@@ -362,15 +362,16 @@ class TipRepository(
                 when (cacheType) {
                     TipCacheType.BY_TYPE -> {
                         tipsCache.entries.removeAll { it.value.tip.tipTypeId == tipTypeId }
+                        logger.d { "Removed tips for tip type $tipTypeId from cache" }
                     }
                     TipCacheType.ALL -> {
                         tipsCache.clear()
+                        logger.d { "Cleared all tips from cache" }
                     }
                     else -> {
-                        logger.d { "Cache type $cacheType not implemented for type-specific clearing" }
+                        logger.d { "Cache type $cacheType not implemented for clearing" }
                     }
                 }
-                logger.d { "Cleared tip cache for type $tipTypeId, cache type $cacheType" }
             } finally {
                 cacheMutex.unlock()
             }
@@ -393,12 +394,14 @@ class TipRepository(
     private suspend fun <T> executeWithExceptionMapping(
         operationName: String,
         operation: suspend () -> T
-    ): T {
+    ): Result<T> {
         return try {
-            operation()
+            val result = operation()
+            Result.success(result)
         } catch (ex: Exception) {
             logger.e(ex) { "Repository operation $operationName failed for tip" }
-            throw exceptionMapper.mapToTipDomainException(ex, operationName)
+            val mappedException = exceptionMapper.mapToTipDomainException(ex, operationName)
+            Result.failure(mappedException.message ?: "Unknown error", mappedException)
         }
     }
 

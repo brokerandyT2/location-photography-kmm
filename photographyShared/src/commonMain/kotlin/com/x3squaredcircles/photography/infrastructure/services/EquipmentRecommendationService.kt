@@ -43,8 +43,8 @@ class EquipmentRecommendationService(
                     userLensesResult.isFailure -> return@withContext Result.failure("Failed to load user lenses: ${userLensesResult.error}")
                 }
 
-                val userCameras = userCamerasResult.data ?: emptyList()
-                val userLenses = userLensesResult.data ?: emptyList()
+                val userCameras = userCamerasResult.
+                val userLenses = userLensesResult
 
                 val matchingLenses = findMatchingLenses(userLenses, specs)
                 val combinations = mutableListOf<CameraLensCombination>()

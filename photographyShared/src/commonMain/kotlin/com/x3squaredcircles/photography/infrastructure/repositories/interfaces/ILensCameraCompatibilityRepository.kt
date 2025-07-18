@@ -2,20 +2,21 @@
 package com.x3squaredcircles.photography.infrastructure.repositories.interfaces
 
 import com.x3squaredcircles.photography.application.queries.lenscameracompatibility.LensCameraCompatibilityDto
+import com.x3squaredcircles.core.domain.common.Result
 
 interface ILensCameraCompatibilityRepository {
-    suspend fun getByIdAsync(id: Int): LensCameraCompatibilityDto?
-    suspend fun getAllAsync(): List<LensCameraCompatibilityDto>
-    suspend fun getByLensIdAsync(lensId: Int): List<LensCameraCompatibilityDto>
-    suspend fun getByCameraIdAsync(cameraBodyId: Int): List<LensCameraCompatibilityDto>
-    suspend fun addAsync(compatibility: LensCameraCompatibilityDto): LensCameraCompatibilityDto
-    suspend fun addBatchAsync(compatibilities: List<LensCameraCompatibilityDto>): List<LensCameraCompatibilityDto>
-    suspend fun deleteAsync(id: Int)
-    suspend fun deleteByLensAndCameraAsync(lensId: Int, cameraBodyId: Int)
-    suspend fun deleteByLensIdAsync(lensId: Int)
-    suspend fun deleteByCameraIdAsync(cameraBodyId: Int)
-    suspend fun existsAsync(lensId: Int, cameraBodyId: Int): Boolean
-    suspend fun getCountAsync(): Long
+    suspend fun getByIdAsync(id: Int): Result<LensCameraCompatibilityDto?>
+    suspend fun getAllAsync(): Result<List<LensCameraCompatibilityDto>>
+    suspend fun getByLensIdAsync(lensId: Int): Result<List<LensCameraCompatibilityDto>>
+    suspend fun getByCameraIdAsync(cameraBodyId: Int): Result<List<LensCameraCompatibilityDto>>
+    suspend fun createAsync(compatibility: LensCameraCompatibilityDto): Result<LensCameraCompatibilityDto>
+    suspend fun createBatchAsync(compatibilities: List<LensCameraCompatibilityDto>): Result<List<LensCameraCompatibilityDto>>
+    suspend fun deleteAsync(id: Int): Result<Unit>
+    suspend fun deleteByLensAndCameraAsync(lensId: Int, cameraBodyId: Int): Result<Unit>
+    suspend fun deleteByLensIdAsync(lensId: Int): Result<Unit>
+    suspend fun deleteByCameraIdAsync(cameraBodyId: Int): Result<Unit>
+    suspend fun existsAsync(lensId: Int, cameraBodyId: Int): Result<Boolean>
+    suspend fun getCountAsync(): Result<Long>
     fun clearCache()
     fun clearCache(id: Int)
     fun clearCache(lensId: Int, cameraBodyId: Int)

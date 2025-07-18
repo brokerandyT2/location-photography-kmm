@@ -2,24 +2,25 @@
 package com.x3squaredcircles.photography.infrastructure.repositories.interfaces
 
 import com.x3squaredcircles.photography.application.queries.lens.LensDto
+import com.x3squaredcircles.core.domain.common.Result
 
 interface ILensRepository {
-    suspend fun getByIdAsync(id: Int): LensDto?
-    suspend fun getAllAsync(): List<LensDto>
-    suspend fun getPagedAsync(pageNumber: Int, pageSize: Int): List<LensDto>
-    suspend fun getUserCreatedAsync(): List<LensDto>
-    suspend fun getByFocalLengthRangeAsync(minFocalLength: Double, maxFocalLength: Double): List<LensDto>
-    suspend fun getCompatibleLensesAsync(cameraBodyId: Int): List<LensDto>
-    suspend fun getPrimeLensesAsync(): List<LensDto>
-    suspend fun getZoomLensesAsync(): List<LensDto>
-    suspend fun addAsync(lens: LensDto): LensDto
-    suspend fun updateAsync(lens: LensDto)
-    suspend fun deleteAsync(id: Int)
-    suspend fun getTotalCountAsync(): Long
-    suspend fun getCountByTypeAsync(): Pair<Long, Long> // (primeCount, zoomCount)
-    suspend fun createBulkAsync(lenses: List<LensDto>): List<LensDto>
-    suspend fun updateBulkAsync(lenses: List<LensDto>): Int
-    suspend fun deleteBulkAsync(ids: List<Int>): Int
+    suspend fun getByIdAsync(id: Int): Result<LensDto?>
+    suspend fun getAllAsync(): Result<List<LensDto>>
+    suspend fun getPagedAsync(pageNumber: Int, pageSize: Int): Result<List<LensDto>>
+    suspend fun getUserCreatedAsync(): Result<List<LensDto>>
+    suspend fun getByFocalLengthRangeAsync(minFocalLength: Double, maxFocalLength: Double): Result<List<LensDto>>
+    suspend fun getCompatibleLensesAsync(cameraBodyId: Int): Result<List<LensDto>>
+    suspend fun getPrimeLensesAsync(): Result<List<LensDto>>
+    suspend fun getZoomLensesAsync(): Result<List<LensDto>>
+    suspend fun createAsync(lens: LensDto): Result<LensDto>
+    suspend fun updateAsync(lens: LensDto): Result<Unit>
+    suspend fun deleteAsync(id: Int): Result<Unit>
+    suspend fun getTotalCountAsync(): Result<Long>
+    suspend fun getCountByTypeAsync(): Result<Pair<Long, Long>>
+    suspend fun createBulkAsync(lenses: List<LensDto>): Result<List<LensDto>>
+    suspend fun updateBulkAsync(lenses: List<LensDto>): Result<Int>
+    suspend fun deleteBulkAsync(ids: List<Int>): Result<Int>
     fun clearCache()
     fun clearCache(id: Int)
 }

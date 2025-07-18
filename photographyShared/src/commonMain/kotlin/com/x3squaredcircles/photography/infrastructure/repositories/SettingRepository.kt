@@ -2,6 +2,7 @@
 package com.x3squaredcircles.photography.infrastructure.repositories
 
 import com.x3squaredcircles.core.domain.entities.Setting
+import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISettingRepository
 import com.x3squaredcircles.photography.services.IInfrastructureExceptionMappingService
@@ -22,28 +23,204 @@ class SettingRepository(
     private val cacheMutex = Mutex()
     private val cacheExpiration = 15.minutes
 
-    override suspend fun getByIdAsync(id: Int): Setting? {
+    override suspend fun getByIdAsync(id: Int): Result<Setting?> {
         return executeWithExceptionMapping("GetById") {
             val entity = database.settingQueries.selectById(id.toLong()).executeAsOneOrNull()
             entity?.let { mapToDomain(it) }
         }
     }
 
-    override suspend fun getByKeyAsync(key: String): Setting? {
+    override suspend fun getByKeyAsync(key: String): Result<Setting?> {
         return executeWithExceptionMapping("GetByKey") {
             cacheMutex.withLock {
-                settingsCache[key]?.let { cached ->
-                    if (!cached.isExpired) {
-                        logger.d { "Retrieved setting $key from cache" }
-                        return@executeWithExceptionMapping cached.setting
-                    } else {
-                        settingsCache.remove(key)
-                    }
+                val cached = settingsCache[key]
+                if (cached != null && !cached.isExpired) {
+                    logger.d { "Cache hit for setting key: $key" }
+                    return@executeWithExceptionMapping cached.setting
                 }
             }
 
             val entity = database.settingQueries.selectByKey(key).executeAsOneOrNull()
             val setting = entity?.let { mapToDomain(it) }
+
+            if (setting != null) {
+                cacheMutex.withLock {
+                    val expiration = Clock.System.now() + cacheExpiration
+                    settingsCache[key] = CachedSetting(setting, expiration)
+                    logger.d { "Cached setting for key: $key" }
+                }
+            }
+
+            setting
+        }
+    }
+
+    override suspend fun getAllAsync(): Result<List<Setting>> {
+        return executeWithExceptionMapping("GetAll") {
+            database.settingQueries.selectAll()
+                .executeAsList()
+                .map { mapToDomain(it) }
+        }
+    }
+
+    override suspend fun getByKeysAsync(keys: List<String>): Result<List<Setting>> {
+        return executeWithExceptionMapping("GetByKeys") {
+            if (keys.isEmpty()) return@executeWithExceptionMapping emptyList()
+
+            val results = mutableListOf<Setting>()
+            val uncachedKeys = mutableListOf<String>()
+
+            cacheMutex.withLock {
+                for (key in keys) {
+                    val cached = settingsCache[key]
+                    if (cached != null && !cached.isExpired) {
+                        results.add(cached.setting)
+                        logger.d { "Cache hit for setting key: $key" }
+                    } else {
+                        uncachedKeys.add(key)
+                    }
+                }
+            }
+
+            if (uncachedKeys.isNotEmpty()) {
+                val entities = database.settingQueries.selectAll()
+                    .executeAsList()
+                    .filter { it.key in uncachedKeys }
+
+                val settings = entities.map { mapToDomain(it) }
+                results.addAll(settings)
+
+                cacheMutex.withLock {
+                    val expiration = Clock.System.now() + cacheExpiration
+                    for (setting in settings) {
+                        settingsCache[setting.key] = CachedSetting(setting, expiration)
+                        logger.d { "Cached setting for key: ${setting.key}" }
+                    }
+                }
+            }
+
+            results
+        }
+    }
+
+    override suspend fun createAsync(setting: Setting): Result<Setting> {
+        return executeWithExceptionMapping("Create") {
+            val exists = database.settingQueries.existsByKey(setting.key).executeAsOne()
+            if (exists) {
+                throw IllegalArgumentException("Setting with key '${setting.key}' already exists")
+            }
+
+            database.settingQueries.insert(
+                key = setting.key,
+                value_ = setting.value,
+                description = setting.description,
+                timestamp = setting.timestamp.toEpochMilliseconds()
+            )
+
+            val id = database.settingQueries.lastInsertRowId().executeAsOne()
+            val savedSetting = Setting.fromPersistence(
+                id = id.toInt(),
+                key = setting.key,
+                value = setting.value,
+                description = setting.description,
+                timestamp = setting.timestamp
+            )
+
+            cacheMutex.withLock {
+                val expiration = Clock.System.now() + cacheExpiration
+                settingsCache[setting.key] = CachedSetting(savedSetting, expiration)
+            }
+
+            logger.i { "Created setting with key ${setting.key}" }
+            savedSetting
+        }
+    }
+
+    override suspend fun updateAsync(setting: Setting): Result<Unit> {
+        return executeWithExceptionMapping("Update") {
+            database.settingQueries.update(
+                id = setting.id.toLong(),
+                value_ = setting.value,
+                description = setting.description,
+                timestamp = setting.timestamp.toEpochMilliseconds()
+            )
+            val rowsAffected = database.settingQueries.changes().executeAsOne()
+
+            if (rowsAffected == 0L) {
+                throw IllegalArgumentException("Setting with ID ${setting.id} not found for update")
+            }
+
+            cacheMutex.withLock {
+                settingsCache.remove(setting.key)
+                logger.d { "Removed setting ${setting.key} from cache due to update" }
+            }
+
+            logger.i { "Updated setting with ID ${setting.id}" }
+        }
+    }
+
+    override suspend fun deleteAsync(setting: Setting): Result<Unit> {
+        return executeWithExceptionMapping("Delete") {
+            database.settingQueries.deleteById(setting.id.toLong())
+            val rowsAffected = database.settingQueries.changes().executeAsOne()
+
+            if (rowsAffected == 0L) {
+                throw IllegalArgumentException("Setting with ID ${setting.id} not found for deletion")
+            }
+
+            cacheMutex.withLock {
+                settingsCache.remove(setting.key)
+                logger.d { "Removed setting ${setting.key} from cache due to deletion" }
+            }
+
+            logger.i { "Deleted setting with ID ${setting.id}" }
+        }
+    }
+
+    override suspend fun upsertAsync(key: String, value: String, description: String): Result<Setting> {
+        return executeWithExceptionMapping("Upsert") {
+            val now = Clock.System.now()
+            val existing = database.settingQueries.selectByKey(key).executeAsOneOrNull()
+
+            val setting = if (existing != null) {
+                database.settingQueries.update(
+
+                    value_ = value,
+                    description = description,
+                    timestamp = now.toEpochMilliseconds(),
+                    id = existing.id
+                )
+
+                val updatedSetting = Setting.fromPersistence(
+                    id = existing.id.toInt(),
+                    key = key,
+                    value = value,
+                    description = description,
+                    timestamp = now
+                )
+
+                logger.i { "Updated setting with key $key via upsert" }
+                updatedSetting
+            } else {
+                database.settingQueries.insert(
+                    key = key,
+                    value_ = value,
+                    description = description,
+                    timestamp = now.toEpochMilliseconds()
+                )
+
+                val id = database.settingQueries.lastInsertRowId().executeAsOne()
+                val createdSetting = Setting.fromPersistence(
+                    id = id.toInt(),
+                    key = key,
+                    value = value,
+                    description = description,
+                    timestamp = now
+                )
+
+                logger.i { "Created setting with key $key via upsert" }
+                createdSetting
+            }
 
             cacheMutex.withLock {
                 val expiration = Clock.System.now() + cacheExpiration
@@ -54,200 +231,7 @@ class SettingRepository(
         }
     }
 
-    override suspend fun getAllAsync(): List<Setting> {
-        return executeWithExceptionMapping("GetAll") {
-            database.settingQueries.selectAll()
-                .executeAsList()
-                .map { mapToDomain(it) }
-        }
-    }
-
-    override suspend fun getByKeysAsync(keys: List<String>): List<Setting> {
-        return executeWithExceptionMapping("GetByKeys") {
-            if (keys.isEmpty()) return@executeWithExceptionMapping emptyList()
-
-            val settings = mutableListOf<Setting>()
-            val uncachedKeys = mutableListOf<String>()
-
-            cacheMutex.withLock {
-                keys.forEach { key ->
-                    settingsCache[key]?.let { cached ->
-                        if (!cached.isExpired) {
-                            cached.setting?.let { settings.add(it) }
-                        } else {
-                            settingsCache.remove(key)
-                            uncachedKeys.add(key)
-                        }
-                    } ?: run {
-                        uncachedKeys.add(key)
-                    }
-                }
-            }
-
-            if (uncachedKeys.isNotEmpty()) {
-                val entities = database.settingQueries.selectByKeys(uncachedKeys).executeAsList()
-                val uncachedSettings = entities.map { mapToDomain(it) }
-
-                cacheMutex.withLock {
-                    val expiration = Clock.System.now() + cacheExpiration
-                    val foundKeys = uncachedSettings.map { it.key }.toSet()
-
-                    uncachedSettings.forEach { setting ->
-                        settingsCache[setting.key] = CachedSetting(setting, expiration)
-                    }
-
-                    uncachedKeys.filter { it !in foundKeys }.forEach { key ->
-                        settingsCache[key] = CachedSetting(null, expiration)
-                    }
-                }
-
-                settings.addAll(uncachedSettings)
-            }
-
-            settings
-        }
-    }
-
-    override suspend fun addAsync(setting: Setting): Setting {
-        return executeWithExceptionMapping("Add") {
-            val exists = database.settingQueries.existsByKey(setting.key).executeAsOne()
-            if (exists) {
-                throw IllegalArgumentException("Setting with key '${setting.key}' already exists")
-            }
-
-            val now = Clock.System.now()
-            database.settingQueries.insert(
-                key = setting.key,
-                value_ = setting.value,
-                description = setting.description,
-                timestamp = now.toEpochMilliseconds()
-            )
-
-            val id = database.settingQueries.lastInsertRowId().executeAsOne()
-            val updatedSetting = Setting.fromPersistence(
-                id = id.toInt(),
-                key = setting.key,
-                value = setting.value,
-                description = setting.description,
-                timestamp = now
-            )
-
-            cacheMutex.withLock {
-                val expiration = Clock.System.now() + cacheExpiration
-                settingsCache[setting.key] = CachedSetting(updatedSetting, expiration)
-            }
-
-            logger.i { "Created setting with key ${setting.key}" }
-            updatedSetting
-        }
-    }
-
-    override suspend fun updateAsync(setting: Setting) {
-        executeWithExceptionMapping("Update") {
-            val now = Clock.System.now()
-            database.settingQueries.updateByKey(
-                value_ = setting.value,
-                description = setting.description,
-                timestamp = now.toEpochMilliseconds(),
-                key = setting.key
-            )
-            val rowsAffected = database.settingQueries.changes().executeAsOne()
-
-            if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Setting with key '${setting.key}' not found for update")
-            }
-
-            val updatedSetting = Setting.fromPersistence(
-                id = setting.id,
-                key = setting.key,
-                value = setting.value,
-                description = setting.description,
-                timestamp = now
-            )
-
-            cacheMutex.withLock {
-                val expiration = Clock.System.now() + cacheExpiration
-                settingsCache[setting.key] = CachedSetting(updatedSetting, expiration)
-            }
-
-            logger.i { "Updated setting with key ${setting.key}" }
-        }
-    }
-
-    override suspend fun deleteAsync(setting: Setting) {
-        executeWithExceptionMapping("Delete") {
-            database.settingQueries.deleteByKey(setting.key)
-            val rowsAffected = database.settingQueries.changes().executeAsOne()
-
-            if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Setting with key '${setting.key}' not found for deletion")
-            }
-
-            cacheMutex.withLock {
-                settingsCache.remove(setting.key)
-            }
-
-            logger.i { "Deleted setting with key ${setting.key}" }
-        }
-    }
-
-    override suspend fun upsertAsync(key: String, value: String, description: String): Setting {
-        return executeWithExceptionMapping("Upsert") {
-            database.transactionWithResult {
-                val now = Clock.System.now()
-
-                val existing = database.settingQueries.selectByKey(key).executeAsOneOrNull()
-
-                val setting = if (existing != null) {
-                    database.settingQueries.updateByKey(
-                        value_ = value,
-                        description = description,
-                        timestamp = now.toEpochMilliseconds(),
-                        key = key
-                    )
-
-                    val updatedSetting = Setting.fromPersistence(
-                        id = existing.id.toInt(),
-                        key = key,
-                        value = value,
-                        description = description,
-                        timestamp = now
-                    )
-
-                    logger.i { "Updated setting with key $key via upsert" }
-                    updatedSetting
-                } else {
-                    database.settingQueries.insert(
-                        key = key,
-                        value_ = value,
-                        description = description,
-                        timestamp = now.toEpochMilliseconds()
-                    )
-
-                    val id = database.settingQueries.lastInsertRowId().executeAsOne()
-                    val createdSetting = Setting.fromPersistence(
-                        id = id.toInt(),
-                        key = key,
-                        value = value,
-                        description = description,
-                        timestamp = now
-                    )
-
-                    logger.i { "Created setting with key $key via upsert" }
-                    createdSetting
-                }
-
-                cacheMutex.tryLock() {
-                    val expiration = Clock.System.now() + cacheExpiration
-                    settingsCache[key] = CachedSetting(setting, expiration)
-                }
-
-                setting
-            }
-        }
-    }
-
-    override suspend fun getAllAsDictionaryAsync(): Map<String, String> {
+    override suspend fun getAllAsDictionaryAsync(): Result<Map<String, String>> {
         return executeWithExceptionMapping("GetAllAsDictionary") {
             database.settingQueries.selectAllAsDictionary()
                 .executeAsList()
@@ -255,15 +239,16 @@ class SettingRepository(
         }
     }
 
-    override suspend fun getByPrefixAsync(keyPrefix: String): List<Setting> {
+    override suspend fun getByPrefixAsync(keyPrefix: String): Result<List<Setting>> {
         return executeWithExceptionMapping("GetByPrefix") {
-            database.settingQueries.selectByKeys(listOf("$keyPrefix%"))
+            database.settingQueries.selectAll()
                 .executeAsList()
+                .filter { it.key.startsWith(keyPrefix) }
                 .map { mapToDomain(it) }
         }
     }
 
-    override suspend fun getRecentlyModifiedAsync(count: Int): List<Setting> {
+    override suspend fun getRecentlyModifiedAsync(count: Int): Result<List<Setting>> {
         return executeWithExceptionMapping("GetRecentlyModified") {
             database.settingQueries.selectAll()
                 .executeAsList()
@@ -273,163 +258,137 @@ class SettingRepository(
         }
     }
 
-    override suspend fun existsAsync(key: String): Boolean {
+    override suspend fun existsAsync(key: String): Result<Boolean> {
         return executeWithExceptionMapping("Exists") {
-            cacheMutex.withLock {
-                settingsCache[key]?.let { cached ->
-                    if (!cached.isExpired) {
-                        return@executeWithExceptionMapping cached.setting != null
-                    }
-                }
-            }
-
             database.settingQueries.existsByKey(key).executeAsOne()
         }
     }
 
-    override suspend fun createBulkAsync(settings: List<Setting>): List<Setting> {
+    override suspend fun createBulkAsync(settings: List<Setting>): Result<List<Setting>> {
         return executeWithExceptionMapping("CreateBulk") {
             if (settings.isEmpty()) return@executeWithExceptionMapping settings
 
             database.transactionWithResult {
-                val now = Clock.System.now()
                 val result = mutableListOf<Setting>()
 
-                val keys = settings.map { it.key }
-                val duplicateKeys = keys.groupBy { it }.filter { it.value.size > 1 }.keys
-                if (duplicateKeys.isNotEmpty()) {
-                    throw IllegalArgumentException("Duplicate keys in batch: ${duplicateKeys.joinToString()}")
-                }
+                for (setting in settings) {
+                    val exists = database.settingQueries.existsByKey(setting.key).executeAsOne()
+                    if (exists) {
+                        throw IllegalArgumentException("Setting with key '${setting.key}' already exists")
+                    }
 
-                val existingKeys = database.settingQueries.selectByKeys(keys)
-                    .executeAsList()
-                    .map { it.key }
-                    .toSet()
-
-                if (existingKeys.isNotEmpty()) {
-                    throw IllegalArgumentException("Settings with these keys already exist: ${existingKeys.joinToString()}")
-                }
-
-                settings.forEach { setting ->
                     database.settingQueries.insert(
                         key = setting.key,
                         value_ = setting.value,
                         description = setting.description,
-                        timestamp = now.toEpochMilliseconds()
+                        timestamp = setting.timestamp.toEpochMilliseconds()
                     )
 
                     val id = database.settingQueries.lastInsertRowId().executeAsOne()
-                    val createdSetting = Setting.fromPersistence(
+                    val savedSetting = Setting.fromPersistence(
                         id = id.toInt(),
                         key = setting.key,
                         value = setting.value,
                         description = setting.description,
-                        timestamp = now
+                        timestamp = setting.timestamp
                     )
-                    result.add(createdSetting)
+                    result.add(savedSetting)
                 }
 
                 cacheMutex.tryLock() {
                     val expiration = Clock.System.now() + cacheExpiration
-                    result.forEach { setting ->
+                    for (setting in result) {
                         settingsCache[setting.key] = CachedSetting(setting, expiration)
                     }
                 }
 
-                logger.i { "Bulk created ${result.size} settings" }
+                logger.i { "Created ${result.size} settings in bulk" }
                 result
             }
         }
     }
 
-    override suspend fun updateBulkAsync(settings: List<Setting>): Int {
+    override suspend fun updateBulkAsync(settings: List<Setting>): Result<Int> {
         return executeWithExceptionMapping("UpdateBulk") {
             if (settings.isEmpty()) return@executeWithExceptionMapping 0
 
             database.transactionWithResult {
-                val now = Clock.System.now()
                 var updatedCount = 0
 
-                settings.forEach { setting ->
-                    database.settingQueries.updateByKey(
+                for (setting in settings) {
+                    database.settingQueries.update(
+
                         value_ = setting.value,
                         description = setting.description,
-                        timestamp = now.toEpochMilliseconds(),
-                        key = setting.key
+                        timestamp = setting.timestamp.toEpochMilliseconds(),
+                        id = setting.id.toLong()
                     )
                     val rowsAffected = database.settingQueries.changes().executeAsOne()
-
-                    if (rowsAffected > 0) {
+                    if (rowsAffected > 0L) {
                         updatedCount++
-
-                        val updatedSetting = Setting.fromPersistence(
-                            id = setting.id,
-                            key = setting.key,
-                            value = setting.value,
-                            description = setting.description,
-                            timestamp = now
-                        )
-
-                        cacheMutex.tryLock() {
-                            val expiration = Clock.System.now() + cacheExpiration
-                            settingsCache[setting.key] = CachedSetting(updatedSetting, expiration)
-                        }
                     }
                 }
 
-                logger.i { "Bulk updated $updatedCount settings" }
+                cacheMutex.tryLock {
+                    for (setting in settings) {
+                        settingsCache.remove(setting.key)
+                    }
+                }
+
+                logger.i { "Updated $updatedCount settings in bulk" }
                 updatedCount
             }
         }
     }
 
-    override suspend fun deleteBulkAsync(keys: List<String>): Int {
+    override suspend fun deleteBulkAsync(keys: List<String>): Result<Int> {
         return executeWithExceptionMapping("DeleteBulk") {
             if (keys.isEmpty()) return@executeWithExceptionMapping 0
 
             database.transactionWithResult {
                 var deletedCount = 0
 
-                keys.forEach { key ->
-                    database.settingQueries.deleteByKey(key)
-                    val rowsAffected = database.settingQueries.changes().executeAsOne()
-                    if (rowsAffected > 0) {
-                        deletedCount++
+                for (key in keys) {
+                    val setting = database.settingQueries.selectByKey(key).executeAsOneOrNull()
+                    if (setting != null) {
+                        database.settingQueries.deleteById(setting.id)
+                        val rowsAffected = database.settingQueries.changes().executeAsOne()
+                        if (rowsAffected > 0L) {
+                            deletedCount++
+                        }
                     }
                 }
 
-                cacheMutex.tryLock() {
-                    keys.forEach { key ->
+                cacheMutex.tryLock {
+                    for (key in keys) {
                         settingsCache.remove(key)
                     }
                 }
 
-                logger.i { "Bulk deleted $deletedCount settings" }
+                logger.i { "Deleted $deletedCount settings in bulk" }
                 deletedCount
             }
         }
     }
 
-    override suspend fun upsertBulkAsync(keyValuePairs: Map<String, String>): Map<String, String> {
+    override suspend fun upsertBulkAsync(keyValuePairs: Map<String, String>): Result<Map<String, String>> {
         return executeWithExceptionMapping("UpsertBulk") {
             if (keyValuePairs.isEmpty()) return@executeWithExceptionMapping emptyMap()
 
             database.transactionWithResult {
-                val now = Clock.System.now()
                 val result = mutableMapOf<String, String>()
+                val now = Clock.System.now()
 
-                val keys = keyValuePairs.keys.toList()
-                val existingSettings = database.settingQueries.selectByKeys(keys)
-                    .executeAsList()
-                    .associateBy { it.key }
+                for ((key, value) in keyValuePairs) {
+                    val existing = database.settingQueries.selectByKey(key).executeAsOneOrNull()
 
-                keyValuePairs.forEach { (key, value) ->
-                    if (existingSettings.containsKey(key)) {
-                        database.settingQueries.updateByKey(
+                    if (existing != null) {
+                        database.settingQueries.update(
+
                             value_ = value,
-                            description = "",
+                            description = existing.description,
                             timestamp = now.toEpochMilliseconds(),
-                            key = key
+                            id = existing.id
                         )
                     } else {
                         database.settingQueries.insert(
@@ -442,15 +401,13 @@ class SettingRepository(
                     result[key] = value
                 }
 
-                cacheMutex.tryLock() {
-                    val expiration = Clock.System.now() + cacheExpiration
-                    keyValuePairs.forEach { (key, value) ->
-                        val setting = Setting.create(key, value)
-                        settingsCache[key] = CachedSetting(setting, expiration)
+                cacheMutex.tryLock {
+                    for (key in keyValuePairs.keys) {
+                        settingsCache.remove(key)
                     }
                 }
 
-                logger.i { "Bulk upserted ${keyValuePairs.size} settings" }
+                logger.i { "Upserted ${result.size} settings in bulk" }
                 result
             }
         }
@@ -460,7 +417,7 @@ class SettingRepository(
         if (cacheMutex.tryLock()) {
             try {
                 settingsCache.clear()
-                logger.i { "Settings cache cleared" }
+                logger.i { "Setting cache cleared" }
             } finally {
                 cacheMutex.unlock()
             }
@@ -491,17 +448,19 @@ class SettingRepository(
     private suspend fun <T> executeWithExceptionMapping(
         operationName: String,
         operation: suspend () -> T
-    ): T {
+    ): Result<T> {
         return try {
-            operation()
+            val result = operation()
+            Result.success(result)
         } catch (ex: Exception) {
             logger.e(ex) { "Repository operation $operationName failed for setting" }
-            throw exceptionMapper.mapToSettingDomainException(ex, operationName)
+            val mappedException = exceptionMapper.mapToSettingDomainException(ex, operationName)
+            Result.failure(mappedException.message ?: "Unknown error", mappedException)
         }
     }
 
     private data class CachedSetting(
-        val setting: Setting?,
+        val setting: Setting,
         val expiresAt: Instant
     ) {
         val isExpired: Boolean

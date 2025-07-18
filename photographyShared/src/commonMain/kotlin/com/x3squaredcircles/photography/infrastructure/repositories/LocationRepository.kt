@@ -4,6 +4,7 @@ package com.x3squaredcircles.photography.infrastructure.repositories
 import com.x3squaredcircles.core.domain.entities.Location
 import com.x3squaredcircles.core.domain.valueobjects.Coordinate
 import com.x3squaredcircles.core.domain.valueobjects.Address
+import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.LocationStats
@@ -25,14 +26,14 @@ class LocationRepository(
     private val cacheMutex = Mutex()
     private val cacheExpiration = 30.minutes
 
-    override suspend fun getByIdAsync(id: Int): Location? {
+    override suspend fun getByIdAsync(id: Int): Result<Location?> {
         return executeWithExceptionMapping("GetById") {
             val entity = database.locationQueries.selectById(id.toLong()).executeAsOneOrNull()
             entity?.let { mapToDomain(it) }
         }
     }
 
-    override suspend fun getAllAsync(): List<Location> {
+    override suspend fun getAllAsync(): Result<List<Location>> {
         return executeWithExceptionMapping("GetAll") {
             database.locationQueries.selectAll()
                 .executeAsList()
@@ -40,7 +41,7 @@ class LocationRepository(
         }
     }
 
-    override suspend fun getActiveAsync(): List<Location> {
+    override suspend fun getActiveAsync(): Result<List<Location>> {
         return executeWithExceptionMapping("GetActive") {
             database.locationQueries.selectActive()
                 .executeAsList()
@@ -48,7 +49,7 @@ class LocationRepository(
         }
     }
 
-    override suspend fun getByTitleAsync(title: String): Location? {
+    override suspend fun getByTitleAsync(title: String): Result<Location?> {
         return executeWithExceptionMapping("GetByTitle") {
             val entity = database.locationQueries.selectByTitle(title).executeAsOneOrNull()
             entity?.let { mapToDomain(it) }
@@ -60,25 +61,47 @@ class LocationRepository(
         pageSize: Int,
         includeDeleted: Boolean,
         searchTerm: String?
-    ): List<Location> {
+    ): Result<List<Location>> {
         return executeWithExceptionMapping("GetPaged") {
             val offset = (pageNumber - 1) * pageSize
-            database.locationQueries.selectPaged(
-                includeDeleted = if (includeDeleted) 1L else 0L,
-                searchTerm = searchTerm,
-                limit = pageSize.toLong(),
-                offset = offset.toLong()
-            ).executeAsList()
+            val entities = if (includeDeleted) {
+                database.locationQueries.selectAll()
+            } else {
+                database.locationQueries.selectActive()
+            }.executeAsList()
+
+            val filteredEntities = if (searchTerm != null) {
+                entities.filter {
+                    it.title.contains(searchTerm, ignoreCase = true) ||
+                            it.description?.contains(searchTerm, ignoreCase = true) == true
+                }
+            } else {
+                entities
+            }
+
+            filteredEntities
+                .drop(offset)
+                .take(pageSize)
                 .map { mapToDomain(it) }
         }
     }
 
-    override suspend fun getTotalCountAsync(includeDeleted: Boolean, searchTerm: String?): Long {
+    override suspend fun getTotalCountAsync(includeDeleted: Boolean, searchTerm: String?): Result<Long> {
         return executeWithExceptionMapping("GetTotalCount") {
-            database.locationQueries.selectCount(
-                includeDeleted = if (includeDeleted) 1L else 0L,
-                searchTerm = searchTerm
-            ).executeAsOne()
+            val entities = if (includeDeleted) {
+                database.locationQueries.selectAll()
+            } else {
+                database.locationQueries.selectActive()
+            }.executeAsList()
+
+            if (searchTerm != null) {
+                entities.count {
+                    it.title.contains(searchTerm, ignoreCase = true) ||
+                            it.description?.contains(searchTerm, ignoreCase = true) == true
+                }.toLong()
+            } else {
+                entities.size.toLong()
+            }
         }
     }
 
@@ -86,31 +109,35 @@ class LocationRepository(
         centerCoordinate: Coordinate,
         radiusKm: Double,
         limit: Int
-    ): List<Location> {
+    ): Result<List<Location>> {
         return executeWithExceptionMapping("GetNearby") {
-            val boundingBox = calculateBoundingBox(centerCoordinate, radiusKm)
-            val candidates = database.locationQueries.selectNearby(
-                minLat = boundingBox.minLat,
-                maxLat = boundingBox.maxLat,
-                minLon = boundingBox.minLon,
-                maxLon = boundingBox.maxLon,
-                centerLat = centerCoordinate.latitude,
-                centerLon = centerCoordinate.longitude
-            ).executeAsList()
+            database.locationQueries.selectActive()
+                .executeAsList()
                 .map { mapToDomain(it) }
-
-            candidates.filter { location ->
-                centerCoordinate.distanceTo(location.coordinate) <= radiusKm
-            }.take(limit)
+                .filter { location ->
+                    val distance = calculateDistance(centerCoordinate, location.coordinate)
+                    distance <= radiusKm
+                }
+                .sortedBy { location ->
+                    calculateDistance(centerCoordinate, location.coordinate)
+                }
+                .take(limit)
         }
     }
 
-    override suspend fun searchByTextAsync(searchTerm: String, includeDeleted: Boolean): List<Location> {
+    override suspend fun searchByTextAsync(searchTerm: String, includeDeleted: Boolean): Result<List<Location>> {
         return executeWithExceptionMapping("SearchByText") {
-            database.locationQueries.searchByText(
-                searchTerm = searchTerm,
-                includeDeleted = if (includeDeleted) 1L else 0L
-            ).executeAsList()
+            val entities = if (includeDeleted) {
+                database.locationQueries.selectAll()
+            } else {
+                database.locationQueries.selectActive()
+            }.executeAsList()
+
+            entities
+                .filter {
+                    it.title.contains(searchTerm, ignoreCase = true) ||
+                            it.description?.contains(searchTerm, ignoreCase = true) == true
+                }
                 .map { mapToDomain(it) }
         }
     }
@@ -120,55 +147,62 @@ class LocationRepository(
         northLat: Double,
         westLon: Double,
         eastLon: Double
-    ): List<Location> {
+    ): Result<List<Location>> {
         return executeWithExceptionMapping("GetByBounds") {
-            database.locationQueries.selectByBounds(
-                southLat = southLat,
-                northLat = northLat,
-                westLon = westLon,
-                eastLon = eastLon
-            ).executeAsList()
-                .map { mapToDomain(it) }
-        }
-    }
-
-    override suspend fun getRecentAsync(count: Int): List<Location> {
-        return executeWithExceptionMapping("GetRecent") {
-            val sinceTimestamp = Clock.System.now().minus(30.minutes).toEpochMilliseconds()
-            database.locationQueries.selectRecent(
-                createdAt = sinceTimestamp,
-                value_ = count.toLong()
-            ).executeAsList()
-                .map { mapToDomain(it) }
-        }
-    }
-
-    override suspend fun getModifiedSinceAsync(timestamp: Long): List<Location> {
-        return executeWithExceptionMapping("GetModifiedSince") {
-            database.locationQueries.selectModifiedSince(timestamp)
+            database.locationQueries.selectActive()
                 .executeAsList()
                 .map { mapToDomain(it) }
+                .filter { location ->
+                    location.coordinate.latitude >= southLat &&
+                            location.coordinate.latitude <= northLat &&
+                            location.coordinate.longitude >= westLon &&
+                            location.coordinate.longitude <= eastLon
+                }
         }
     }
 
-    override suspend fun getRandomAsync(): Location? {
+    override suspend fun getRecentAsync(count: Int): Result<List<Location>> {
+        return executeWithExceptionMapping("GetRecent") {
+            database.locationQueries.selectActive()
+                .executeAsList()
+                .map { mapToDomain(it) }
+                .sortedByDescending { it.timestamp }
+                .take(count)
+        }
+    }
+
+    override suspend fun getModifiedSinceAsync(timestamp: Long): Result<List<Location>> {
+        return executeWithExceptionMapping("GetModifiedSince") {
+            database.locationQueries.selectActive()
+                .executeAsList()
+                .map { mapToDomain(it) }
+                .filter { it.timestamp.toEpochMilliseconds() > timestamp }
+        }
+    }
+
+    override suspend fun getRandomAsync(): Result<Location?> {
         return executeWithExceptionMapping("GetRandom") {
-            val entity = database.locationQueries.selectRandom().executeAsOneOrNull()
-            entity?.let { mapToDomain(it) }
+            val entities = database.locationQueries.selectActive().executeAsList()
+            if (entities.isNotEmpty()) {
+                val randomEntity = entities.random()
+                mapToDomain(randomEntity)
+            } else {
+                null
+            }
         }
     }
 
-    override suspend fun addAsync(location: Location): Location {
-        return executeWithExceptionMapping("Add") {
-            val now = Clock.System.now()
+    override suspend fun createAsync(location: Location): Result<Location> {
+        return executeWithExceptionMapping("Create") {
+            val now = Clock.System.now().toEpochMilliseconds()
             database.locationQueries.insert(
                 title = location.title,
-                description = location.description,
+                description = location.description ?: "",
                 latitude = location.coordinate.latitude,
                 longitude = location.coordinate.longitude,
                 photoPath = location.photoPath,
-                createdAt = now.toEpochMilliseconds(),
-                updatedAt = now.toEpochMilliseconds()
+                createdAt = now,
+                updatedAt = now
             )
 
             val id = database.locationQueries.lastInsertRowId().executeAsOne()
@@ -180,7 +214,7 @@ class LocationRepository(
                 address = location.address,
                 photoPath = location.photoPath,
                 isDeleted = false,
-                timestamp = now
+                timestamp = Clock.System.now()
             )
 
             logger.i { "Created location with ID ${savedLocation.id}" }
@@ -188,16 +222,15 @@ class LocationRepository(
         }
     }
 
-    override suspend fun updateAsync(location: Location) {
-        executeWithExceptionMapping("Update") {
-            val now = Clock.System.now()
+    override suspend fun updateAsync(location: Location): Result<Unit> {
+        return executeWithExceptionMapping("Update") {
             database.locationQueries.update(
                 title = location.title,
-                description = location.description,
+                description = location.description ?: "",
                 latitude = location.coordinate.latitude,
                 longitude = location.coordinate.longitude,
                 photoPath = location.photoPath,
-                updatedAt = now.toEpochMilliseconds(),
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
                 id = location.id.toLong()
             )
             val rowsAffected = database.locationQueries.changes().executeAsOne()
@@ -210,64 +243,61 @@ class LocationRepository(
         }
     }
 
-    override suspend fun deleteAsync(location: Location) {
-        softDeleteAsync(location)
+    override suspend fun deleteAsync(location: Location): Result<Unit> {
+        return executeWithExceptionMapping("Delete") {
+            database.locationQueries.hardDelete(location.id.toLong())
+            val rowsAffected = database.locationQueries.changes().executeAsOne()
+
+            if (rowsAffected == 0L) {
+                throw IllegalArgumentException("Location with ID ${location.id} not found for deletion")
+            }
+
+            logger.i { "Deleted location with ID ${location.id}" }
+        }
     }
 
-    override suspend fun softDeleteAsync(location: Location) {
-        executeWithExceptionMapping("SoftDelete") {
-            val now = Clock.System.now()
+    override suspend fun softDeleteAsync(location: Location): Result<Unit> {
+        return executeWithExceptionMapping("SoftDelete") {
             database.locationQueries.softDelete(
-                updatedAt = now.toEpochMilliseconds(),
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
                 id = location.id.toLong()
             )
             val rowsAffected = database.locationQueries.changes().executeAsOne()
 
             if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Location with ID ${location.id} not found for soft delete")
+                throw IllegalArgumentException("Location with ID ${location.id} not found for soft deletion")
             }
 
             logger.i { "Soft deleted location with ID ${location.id}" }
         }
     }
 
-    override suspend fun restoreAsync(location: Location) {
-        executeWithExceptionMapping("Restore") {
-            val now = Clock.System.now()
+    override suspend fun restoreAsync(location: Location): Result<Unit> {
+        return executeWithExceptionMapping("Restore") {
             database.locationQueries.restore(
-                updatedAt = now.toEpochMilliseconds(),
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
                 id = location.id.toLong()
             )
             val rowsAffected = database.locationQueries.changes().executeAsOne()
 
             if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Location with ID ${location.id} not found for restore")
+                throw IllegalArgumentException("Location with ID ${location.id} not found for restoration")
             }
 
             logger.i { "Restored location with ID ${location.id}" }
         }
     }
 
-    override suspend fun hardDeleteAsync(location: Location) {
-        executeWithExceptionMapping("HardDelete") {
-            database.locationQueries.hardDelete(location.id.toLong())
-            val rowsAffected = database.locationQueries.changes().executeAsOne()
-
-            if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Location with ID ${location.id} not found for hard delete")
-            }
-
-            logger.i { "Hard deleted location with ID ${location.id}" }
-        }
+    override suspend fun hardDeleteAsync(location: Location): Result<Unit> {
+        return deleteAsync(location)
     }
 
-    override suspend fun updateCoordinatesAsync(id: Int, coordinate: Coordinate) {
-        executeWithExceptionMapping("UpdateCoordinates") {
-            val now = Clock.System.now()
+    override suspend fun updateCoordinatesAsync(id: Int, coordinate: Coordinate): Result<Unit> {
+        return executeWithExceptionMapping("UpdateCoordinates") {
             database.locationQueries.updateCoordinates(
                 latitude = coordinate.latitude,
                 longitude = coordinate.longitude,
-                updatedAt = now.toEpochMilliseconds(),
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
                 id = id.toLong()
             )
             val rowsAffected = database.locationQueries.changes().executeAsOne()
@@ -280,12 +310,11 @@ class LocationRepository(
         }
     }
 
-    override suspend fun updatePhotoPathAsync(id: Int, photoPath: String?) {
-        executeWithExceptionMapping("UpdatePhotoPath") {
-            val now = Clock.System.now()
+    override suspend fun updatePhotoPathAsync(id: Int, photoPath: String?): Result<Unit> {
+        return executeWithExceptionMapping("UpdatePhotoPath") {
             database.locationQueries.updatePhotoPath(
                 photoPath = photoPath,
-                updatedAt = now.toEpochMilliseconds(),
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
                 id = id.toLong()
             )
             val rowsAffected = database.locationQueries.changes().executeAsOne()
@@ -298,35 +327,37 @@ class LocationRepository(
         }
     }
 
-    override suspend fun existsByIdAsync(id: Int): Boolean {
+    override suspend fun existsByIdAsync(id: Int): Result<Boolean> {
         return executeWithExceptionMapping("ExistsById") {
-            database.locationQueries.existsById(id.toLong()).executeAsOne()
+            database.locationQueries.selectById(id.toLong()).executeAsOneOrNull() != null
         }
     }
 
-    override suspend fun existsByTitleAsync(title: String, excludeId: Int): Boolean {
+    override suspend fun existsByTitleAsync(title: String, excludeId: Int): Result<Boolean> {
         return executeWithExceptionMapping("ExistsByTitle") {
-            database.locationQueries.existsByTitle(title, excludeId.toLong()).executeAsOne()
+            database.locationQueries.selectAll()
+                .executeAsList()
+                .any { it.title == title && it.id.toInt() != excludeId }
         }
     }
 
-    override suspend fun createBulkAsync(locations: List<Location>): List<Location> {
+    override suspend fun createBulkAsync(locations: List<Location>): Result<List<Location>> {
         return executeWithExceptionMapping("CreateBulk") {
             if (locations.isEmpty()) return@executeWithExceptionMapping locations
 
             database.transactionWithResult {
-                val now = Clock.System.now()
                 val result = mutableListOf<Location>()
 
-                locations.forEach { location ->
+                for (location in locations) {
+                    val now = Clock.System.now().toEpochMilliseconds()
                     database.locationQueries.insert(
                         title = location.title,
-                        description = location.description,
+                        description = location.description ?: "",
                         latitude = location.coordinate.latitude,
                         longitude = location.coordinate.longitude,
                         photoPath = location.photoPath,
-                        createdAt = now.toEpochMilliseconds(),
-                        updatedAt = now.toEpochMilliseconds()
+                        createdAt = now,
+                        updatedAt = now
                     )
 
                     val id = database.locationQueries.lastInsertRowId().executeAsOne()
@@ -338,93 +369,103 @@ class LocationRepository(
                         address = location.address,
                         photoPath = location.photoPath,
                         isDeleted = false,
-                        timestamp = now
+                        timestamp = Clock.System.now()
                     )
                     result.add(savedLocation)
                 }
 
-                logger.i { "Bulk created ${result.size} locations" }
+                logger.i { "Created ${result.size} locations in bulk" }
                 result
             }
         }
     }
 
-    override suspend fun updateBulkAsync(locations: List<Location>): Int {
+    override suspend fun updateBulkAsync(locations: List<Location>): Result<Int> {
         return executeWithExceptionMapping("UpdateBulk") {
             if (locations.isEmpty()) return@executeWithExceptionMapping 0
 
             database.transactionWithResult {
-                val now = Clock.System.now()
                 var updatedCount = 0
 
-                locations.forEach { location ->
+                for (location in locations) {
                     database.locationQueries.update(
                         title = location.title,
-                        description = location.description,
+                        description = location.description ?: "",
                         latitude = location.coordinate.latitude,
                         longitude = location.coordinate.longitude,
                         photoPath = location.photoPath,
-                        updatedAt = now.toEpochMilliseconds(),
+                        updatedAt = Clock.System.now().toEpochMilliseconds(),
                         id = location.id.toLong()
                     )
                     val rowsAffected = database.locationQueries.changes().executeAsOne()
-
-                    if (rowsAffected > 0) {
+                    if (rowsAffected > 0L) {
                         updatedCount++
                     }
                 }
 
-                logger.i { "Bulk updated $updatedCount locations" }
+                logger.i { "Updated $updatedCount locations in bulk" }
                 updatedCount
             }
         }
     }
 
-    override suspend fun deleteBulkAsync(locationIds: List<Int>): Int {
+    override suspend fun deleteBulkAsync(locationIds: List<Int>): Result<Int> {
         return executeWithExceptionMapping("DeleteBulk") {
             if (locationIds.isEmpty()) return@executeWithExceptionMapping 0
 
             database.transactionWithResult {
-                val now = Clock.System.now()
                 var deletedCount = 0
 
-                locationIds.forEach { id ->
-                    database.locationQueries.softDelete(
-                        updatedAt = now.toEpochMilliseconds(),
-                        id = id.toLong()
-                    )
+                for (id in locationIds) {
+                    database.locationQueries.hardDelete(id.toLong())
                     val rowsAffected = database.locationQueries.changes().executeAsOne()
-                    if (rowsAffected > 0) {
+                    if (rowsAffected > 0L) {
                         deletedCount++
                     }
                 }
 
-                logger.i { "Bulk deleted $deletedCount locations" }
+                logger.i { "Deleted $deletedCount locations in bulk" }
                 deletedCount
             }
         }
     }
 
-    override suspend fun cleanupDeletedAsync(olderThanTimestamp: Long): Int {
+    override suspend fun cleanupDeletedAsync(olderThanTimestamp: Long): Result<Int> {
         return executeWithExceptionMapping("CleanupDeleted") {
-            database.locationQueries.cleanupDeleted(olderThanTimestamp)
-            val rowsAffected = database.locationQueries.changes().executeAsOne()
+            // Since we don't have a deleteOlderThan query, we'll delete by isDeleted status
+            // This is a simplified implementation
+            val deletedLocations = database.locationQueries.selectAll()
+                .executeAsList()
+                .filter { it.isDeleted == 1L && it.updatedAt < olderThanTimestamp }
 
-            logger.i { "Cleaned up $rowsAffected old deleted locations" }
-            rowsAffected.toInt()
+            var deletedCount = 0
+            for (location in deletedLocations) {
+                database.locationQueries.hardDelete(location.id)
+                deletedCount++
+            }
+
+            logger.i { "Cleaned up $deletedCount deleted locations older than $olderThanTimestamp" }
+            deletedCount
         }
     }
 
-    override suspend fun getStatsAsync(): LocationStats {
+    override suspend fun getStatsAsync(): Result<LocationStats> {
         return executeWithExceptionMapping("GetStats") {
-            val statsResult = database.locationQueries.selectStats().executeAsOne()
+            val allLocations = database.locationQueries.selectAll().executeAsList()
+            val activeLocations = allLocations.filter { it.isDeleted == 0L }
+            val deletedLocations = allLocations.filter { it.isDeleted == 1L }
+            val withPhotos = allLocations.filter { !it.photoPath.isNullOrBlank() }
+
+            val oldestTimestamp = allLocations.minOfOrNull { it.createdAt }
+            val newestTimestamp = allLocations.maxOfOrNull { it.createdAt }
+
             LocationStats(
-                totalCount = statsResult.COUNT ?: 0L,
-                activeCount = statsResult.COUNT_ ?: 0L,
-                deletedCount = statsResult.COUNT__ ?: 0L,
-                withPhotosCount = statsResult.COUNT___ ?: 0L,
-                oldestTimestamp = statsResult.MIN,
-                newestTimestamp = statsResult.MAX
+                totalCount = allLocations.size.toLong(),
+                activeCount = activeLocations.size.toLong(),
+                deletedCount = deletedLocations.size.toLong(),
+                withPhotosCount = withPhotos.size.toLong(),
+                oldestTimestamp = oldestTimestamp,
+                newestTimestamp = newestTimestamp
             )
         }
     }
@@ -452,39 +493,46 @@ class LocationRepository(
     }
 
     private fun mapToDomain(entity: com.x3squaredcircles.photographyshared.db.Location): Location {
+        val coordinate = Coordinate.create(entity.latitude, entity.longitude)
+        // Address information is not stored in the database schema
+        val address: Address? = null
+
         return Location.fromPersistence(
             id = entity.id.toInt(),
             title = entity.title,
             description = entity.description,
-            coordinate = Coordinate.create(entity.latitude, entity.longitude),
-            address = Address("", ""),
+            coordinate = coordinate,
+            address = address!!,
             photoPath = entity.photoPath,
             isDeleted = entity.isDeleted == 1L,
             timestamp = Instant.fromEpochMilliseconds(entity.createdAt)
         )
     }
 
-    private fun calculateBoundingBox(center: Coordinate, radiusKm: Double): BoundingBox {
-        val deltaLat = radiusKm / 111.32
-        val deltaLon = radiusKm / (111.32 * cos(center.latitude * PI / 180))
+    private fun calculateDistance(coord1: Coordinate, coord2: Coordinate): Double {
+        val earthRadius = 6371.0 // Earth radius in kilometers
+        val lat1Rad = Math.toRadians(coord1.latitude)
+        val lat2Rad = Math.toRadians(coord2.latitude)
+        val deltaLat = Math.toRadians(coord2.latitude - coord1.latitude)
+        val deltaLon = Math.toRadians(coord2.longitude - coord1.longitude)
 
-        return BoundingBox(
-            minLat = maxOf(-90.0, center.latitude - deltaLat),
-            maxLat = minOf(90.0, center.latitude + deltaLat),
-            minLon = maxOf(-180.0, center.longitude - deltaLon),
-            maxLon = minOf(180.0, center.longitude + deltaLon)
-        )
+        val a = sin(deltaLat / 2).pow(2) + cos(lat1Rad) * cos(lat2Rad) * sin(deltaLon / 2).pow(2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadius * c
     }
 
     private suspend fun <T> executeWithExceptionMapping(
         operationName: String,
         operation: suspend () -> T
-    ): T {
+    ): Result<T> {
         return try {
-            operation()
+            val result = operation()
+            Result.success(result)
         } catch (ex: Exception) {
             logger.e(ex) { "Repository operation $operationName failed for location" }
-            throw exceptionMapper.mapToLocationDomainException(ex, operationName)
+            val mappedException = exceptionMapper.mapToLocationDomainException(ex, operationName)
+            Result.failure(mappedException.message ?: "Unknown error", mappedException)
         }
     }
 
@@ -495,11 +543,4 @@ class LocationRepository(
         val isExpired: Boolean
             get() = Clock.System.now() > expiresAt
     }
-
-    private data class BoundingBox(
-        val minLat: Double,
-        val maxLat: Double,
-        val minLon: Double,
-        val maxLon: Double
-    )
 }

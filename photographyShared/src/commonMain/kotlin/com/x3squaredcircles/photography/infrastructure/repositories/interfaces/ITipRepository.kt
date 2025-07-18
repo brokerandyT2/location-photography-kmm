@@ -2,37 +2,38 @@
 package com.x3squaredcircles.photography.infrastructure.repositories.interfaces
 
 import com.x3squaredcircles.core.domain.entities.Tip
+import com.x3squaredcircles.core.domain.common.Result
 
 interface ITipRepository {
-    suspend fun getByIdAsync(id: Int): Tip?
-    suspend fun getAllAsync(): List<Tip>
-    suspend fun getByTypeIdAsync(tipTypeId: Int): List<Tip>
-    suspend fun getWithCameraSettingsAsync(): List<Tip>
-    suspend fun searchByTextAsync(searchTerm: String): List<Tip>
-    suspend fun getRandomAsync(count: Int = 1): List<Tip>
+    suspend fun getByIdAsync(id: Int): Result<Tip?>
+    suspend fun getAllAsync(): Result<List<Tip>>
+    suspend fun getByTypeIdAsync(tipTypeId: Int): Result<List<Tip>>
+    suspend fun getWithCameraSettingsAsync(): Result<List<Tip>>
+    suspend fun searchByTextAsync(searchTerm: String): Result<List<Tip>>
+    suspend fun getRandomAsync(count: Int = 1): Result<List<Tip>>
     suspend fun getPagedAsync(
         pageNumber: Int,
         pageSize: Int,
         tipTypeId: Int? = null
-    ): List<Tip>
-    suspend fun getTotalCountAsync(): Long
-    suspend fun getCountByTypeAsync(tipTypeId: Int): Long
-    suspend fun addAsync(tip: Tip): Tip
-    suspend fun updateAsync(tip: Tip)
-    suspend fun deleteAsync(tip: Tip)
-    suspend fun deleteByTypeIdAsync(tipTypeId: Int): Int
+    ): Result<List<Tip>>
+    suspend fun getTotalCountAsync(): Result<Long>
+    suspend fun getCountByTypeAsync(tipTypeId: Int): Result<Long>
+    suspend fun createAsync(tip: Tip): Result<Tip>
+    suspend fun updateAsync(tip: Tip): Result<Unit>
+    suspend fun deleteAsync(tip: Tip): Result<Unit>
+    suspend fun deleteByTypeIdAsync(tipTypeId: Int): Result<Int>
     suspend fun updateCameraSettingsAsync(
         id: Int,
         fstop: String,
         shutterSpeed: String,
         iso: String
-    )
-    suspend fun existsByIdAsync(id: Int): Boolean
-    suspend fun createBulkAsync(tips: List<Tip>): List<Tip>
-    suspend fun updateBulkAsync(tips: List<Tip>): Int
-    suspend fun deleteBulkAsync(tipIds: List<Int>): Int
-    suspend fun getTipsByLocalizationAsync(localization: String): List<Tip>
-    suspend fun updateLocalizationAsync(id: Int, localization: String)
+    ): Result<Unit>
+    suspend fun existsByIdAsync(id: Int): Result<Boolean>
+    suspend fun createBulkAsync(tips: List<Tip>): Result<List<Tip>>
+    suspend fun updateBulkAsync(tips: List<Tip>): Result<Int>
+    suspend fun deleteBulkAsync(tipIds: List<Int>): Result<Int>
+    suspend fun getTipsByLocalizationAsync(localization: String): Result<List<Tip>>
+    suspend fun updateLocalizationAsync(id: Int, localization: String): Result<Unit>
     fun clearCache()
     fun clearCache(id: Int)
     fun clearCache(tipTypeId: Int, cacheType: TipCacheType)
