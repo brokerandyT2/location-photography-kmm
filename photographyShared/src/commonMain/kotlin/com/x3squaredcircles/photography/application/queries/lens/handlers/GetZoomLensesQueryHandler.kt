@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lens.GetZoomLensesQu
 import com.x3squaredcircles.photography.application.queries.lens.GetZoomLensesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetZoomLensesQueryHandler(
@@ -13,24 +14,24 @@ class GetZoomLensesQueryHandler(
 ) : IQueryHandler<GetZoomLensesQuery, GetZoomLensesQueryResult> {
 
     override suspend fun handle(query: GetZoomLensesQuery): GetZoomLensesQueryResult {
-        return try {
-            logger.d { "Handling GetZoomLensesQuery" }
+        logger.d { "Handling GetZoomLensesQuery" }
 
-            val lenses = lensRepository.getZoomLensesAsync()
-
-            logger.i { "Retrieved ${lenses.size} zoom lenses" }
-
-            GetZoomLensesQueryResult(
-                lenses = lenses,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get zoom lenses" }
-            GetZoomLensesQueryResult(
-                lenses = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensRepository.getZoomLensesAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} zoom lenses" }
+                GetZoomLensesQueryResult(
+                    lenses = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get zoom lenses: ${result.error}" }
+                GetZoomLensesQueryResult(
+                    lenses = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

@@ -6,11 +6,13 @@ import com.x3squaredcircles.core.domain.entities.WeatherForecast
 import com.x3squaredcircles.core.domain.entities.HourlyForecast
 import com.x3squaredcircles.core.domain.valueobjects.Coordinate
 import com.x3squaredcircles.core.domain.valueobjects.WindInfo
+import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photographyshared.db.PhotographyDatabase
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.WeatherCacheType
 import com.x3squaredcircles.photography.services.IInfrastructureExceptionMappingService
 import co.touchlab.kermit.Logger
+import com.x3squaredcircles.photographyshared.db.DailyForecast
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -27,14 +29,14 @@ class WeatherRepository(
     private val cacheMutex = Mutex()
     private val cacheExpiration = 10.minutes
 
-    override suspend fun getByIdAsync(id: Int): Weather? {
+    override suspend fun getByIdAsync(id: Int): Result<Weather?> {
         return executeWithExceptionMapping("GetById") {
             val entity = database.weatherQueries.selectById(id.toLong()).executeAsOneOrNull()
             entity?.let { mapToDomain(it) }
         }
     }
 
-    override suspend fun getAllAsync(): List<Weather> {
+    override suspend fun getAllAsync(): Result<List<Weather>> {
         return executeWithExceptionMapping("GetAll") {
             database.weatherQueries.selectAll()
                 .executeAsList()
@@ -42,14 +44,14 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun getByLocationIdAsync(locationId: Int): Weather? {
+    override suspend fun getByLocationIdAsync(locationId: Int): Result<Weather?> {
         return executeWithExceptionMapping("GetByLocationId") {
             val entity = database.weatherQueries.selectByLocationId(locationId.toLong()).executeAsOneOrNull()
             entity?.let { mapToDomain(it) }
         }
     }
 
-    override suspend fun getByCoordinatesAsync(coordinate: Coordinate): Weather? {
+    override suspend fun getByCoordinatesAsync(coordinate: Coordinate): Result<Weather?> {
         return executeWithExceptionMapping("GetByCoordinates") {
             val entity = database.weatherQueries.selectByCoordinates(
                 coordinate.latitude,
@@ -63,7 +65,7 @@ class WeatherRepository(
         locationId: Int,
         startTime: Instant,
         endTime: Instant
-    ): List<Weather> {
+    ): Result<List<Weather>> {
         return executeWithExceptionMapping("GetByLocationAndTimeRange") {
             database.weatherQueries.selectByLocationAndTimeRange(
                 locationId.toLong(),
@@ -74,7 +76,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun getRecentAsync(count: Int): List<Weather> {
+    override suspend fun getRecentAsync(count: Int): Result<List<Weather>> {
         return executeWithExceptionMapping("GetRecent") {
             database.weatherQueries.selectRecent(count.toLong())
                 .executeAsList()
@@ -82,7 +84,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun getExpiredAsync(olderThan: Instant): List<Weather> {
+    override suspend fun getExpiredAsync(olderThan: Instant): Result<List<Weather>> {
         return executeWithExceptionMapping("GetExpired") {
             database.weatherQueries.selectExpired(olderThan.toEpochMilliseconds())
                 .executeAsList()
@@ -90,8 +92,8 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun addAsync(weather: Weather): Weather {
-        return executeWithExceptionMapping("Add") {
+    override suspend fun createAsync(weather: Weather): Result<Weather> {
+        return executeWithExceptionMapping("Create") {
             database.weatherQueries.insert(
                 locationId = weather.locationId.toLong(),
                 latitude = weather.coordinate.latitude,
@@ -116,8 +118,8 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun updateAsync(weather: Weather) {
-        executeWithExceptionMapping("Update") {
+    override suspend fun updateAsync(weather: Weather): Result<Unit> {
+        return executeWithExceptionMapping("Update") {
             database.weatherQueries.update(
                 locationId = weather.locationId.toLong(),
                 latitude = weather.coordinate.latitude,
@@ -137,12 +139,12 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun deleteAsync(weather: Weather) {
-        softDeleteAsync(weather)
+    override suspend fun deleteAsync(weather: Weather): Result<Unit> {
+        return softDeleteAsync(weather)
     }
 
-    override suspend fun softDeleteAsync(weather: Weather) {
-        executeWithExceptionMapping("SoftDelete") {
+    override suspend fun softDeleteAsync(weather: Weather): Result<Unit> {
+        return executeWithExceptionMapping("SoftDelete") {
             database.weatherQueries.softDelete(weather.id.toLong())
             val rowsAffected = database.weatherQueries.changes().executeAsOne()
 
@@ -154,8 +156,8 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun softDeleteByLocationIdAsync(locationId: Int) {
-        executeWithExceptionMapping("SoftDeleteByLocationId") {
+    override suspend fun softDeleteByLocationIdAsync(locationId: Int): Result<Unit> {
+        return executeWithExceptionMapping("SoftDeleteByLocationId") {
             database.weatherQueries.softDeleteByLocationId(locationId.toLong())
             val rowsAffected = database.weatherQueries.changes().executeAsOne()
 
@@ -163,7 +165,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun hasFreshDataAsync(locationId: Int, maxAge: Instant): Boolean {
+    override suspend fun hasFreshDataAsync(locationId: Int, maxAge: Instant): Result<Boolean> {
         return executeWithExceptionMapping("HasFreshData") {
             database.weatherQueries.hasFreshData(
                 locationId.toLong(),
@@ -172,7 +174,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun hasFreshDataForCoordinatesAsync(coordinate: Coordinate, maxAge: Instant): Boolean {
+    override suspend fun hasFreshDataForCoordinatesAsync(coordinate: Coordinate, maxAge: Instant): Result<Boolean> {
         return executeWithExceptionMapping("HasFreshDataForCoordinates") {
             database.weatherQueries.hasFreshDataForCoordinates(
                 coordinate.latitude,
@@ -182,7 +184,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun cleanupExpiredAsync(olderThan: Instant): Int {
+    override suspend fun cleanupExpiredAsync(olderThan: Instant): Result<Int> {
         return executeWithExceptionMapping("CleanupExpired") {
             database.weatherQueries.cleanupExpired(olderThan.toEpochMilliseconds())
             val rowsAffected = database.weatherQueries.changes().executeAsOne()
@@ -192,13 +194,13 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun getCountAsync(): Long {
+    override suspend fun getCountAsync(): Result<Long> {
         return executeWithExceptionMapping("GetCount") {
             database.weatherQueries.getCount().executeAsOne()
         }
     }
 
-    override suspend fun addForecastAsync(forecast: WeatherForecast): WeatherForecast {
+    override suspend fun addForecastAsync(forecast: WeatherForecast): Result<WeatherForecast> {
         return executeWithExceptionMapping("AddForecast") {
             database.dailyForecastQueries.insert(
                 weatherId = forecast.weatherId.toLong(),
@@ -213,15 +215,16 @@ class WeatherRepository(
                 windGust = forecast.wind.gust,
                 cloudCover = forecast.clouds.toDouble(),
                 precipitationChance = forecast.precipitation,
-                precipitationAmount = forecast.precipitation,
-                condition = forecast.description,
                 description = forecast.description,
                 icon = forecast.icon,
+                precipitationAmount = forecast.precipitation,
+                condition = forecast.description,
                 sunrise = forecast.sunrise.toEpochMilliseconds(),
                 sunset = forecast.sunset.toEpochMilliseconds(),
                 moonPhase = forecast.moonPhase,
                 moonrise = forecast.moonRise?.toEpochMilliseconds(),
-                moonset = forecast.moonSet?.toEpochMilliseconds()
+                moonset = forecast.moonSet?.toEpochMilliseconds(),
+
             )
 
             val id = database.dailyForecastQueries.lastInsertRowId().executeAsOne()
@@ -229,22 +232,18 @@ class WeatherRepository(
                 id = id.toInt(),
                 weatherId = forecast.weatherId,
                 date = forecast.date,
-                sunrise = forecast.sunrise,
-                sunset = forecast.sunset,
-                temperature = forecast.temperature,
                 minTemperature = forecast.minTemperature,
                 maxTemperature = forecast.maxTemperature,
-                description = forecast.description,
-                icon = forecast.icon,
-                wind = forecast.wind,
                 humidity = forecast.humidity,
                 pressure = forecast.pressure,
-                clouds = forecast.clouds,
                 uvIndex = forecast.uvIndex,
-                precipitation = forecast.precipitation,
-                moonRise = forecast.moonRise,
-                moonSet = forecast.moonSet,
-                moonPhase = forecast.moonPhase
+                wind = forecast.wind,
+                clouds = forecast.clouds,
+               description = forecast.description,
+                icon = forecast.icon,
+                sunset = forecast.sunset,
+                sunrise = forecast.sunrise,
+                temperature = forecast.temperature
             )
 
             logger.i { "Created weather forecast with ID ${savedForecast.id}" }
@@ -252,14 +251,14 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun addForecastsAsync(forecasts: List<WeatherForecast>): List<WeatherForecast> {
+    override suspend fun addForecastsAsync(forecasts: List<WeatherForecast>): Result<List<WeatherForecast>> {
         return executeWithExceptionMapping("AddForecasts") {
             if (forecasts.isEmpty()) return@executeWithExceptionMapping forecasts
 
             database.transactionWithResult {
                 val result = mutableListOf<WeatherForecast>()
 
-                forecasts.forEach { forecast ->
+                for (forecast in forecasts) {
                     database.dailyForecastQueries.insert(
                         weatherId = forecast.weatherId.toLong(),
                         forecastDate = forecast.date.toEpochMilliseconds(),
@@ -273,15 +272,15 @@ class WeatherRepository(
                         windGust = forecast.wind.gust,
                         cloudCover = forecast.clouds.toDouble(),
                         precipitationChance = forecast.precipitation,
-                        precipitationAmount = forecast.precipitation,
-                        condition = forecast.description,
                         description = forecast.description,
                         icon = forecast.icon,
+                        condition = forecast.description,
+                        precipitationAmount = forecast.precipitation,
                         sunrise = forecast.sunrise.toEpochMilliseconds(),
                         sunset = forecast.sunset.toEpochMilliseconds(),
                         moonPhase = forecast.moonPhase,
                         moonrise = forecast.moonRise?.toEpochMilliseconds(),
-                        moonset = forecast.moonSet?.toEpochMilliseconds()
+                        moonset = forecast.moonSet?.toEpochMilliseconds(),
                     )
 
                     val id = database.dailyForecastQueries.lastInsertRowId().executeAsOne()
@@ -289,34 +288,30 @@ class WeatherRepository(
                         id = id.toInt(),
                         weatherId = forecast.weatherId,
                         date = forecast.date,
-                        sunrise = forecast.sunrise,
-                        sunset = forecast.sunset,
-                        temperature = forecast.temperature,
                         minTemperature = forecast.minTemperature,
                         maxTemperature = forecast.maxTemperature,
-                        description = forecast.description,
-                        icon = forecast.icon,
-                        wind = forecast.wind,
                         humidity = forecast.humidity,
                         pressure = forecast.pressure,
-                        clouds = forecast.clouds,
                         uvIndex = forecast.uvIndex,
-                        precipitation = forecast.precipitation,
-                        moonRise = forecast.moonRise,
-                        moonSet = forecast.moonSet,
-                        moonPhase = forecast.moonPhase
+                        wind = forecast.wind,
+                        clouds = forecast.clouds,
+                        description = forecast.description,
+                        icon = forecast.icon,
+                        sunset = forecast.sunset,
+                        sunrise = forecast.sunrise,
+                        temperature = forecast.temperature
                     )
                     result.add(savedForecast)
                 }
 
-                logger.i { "Bulk created ${result.size} weather forecasts" }
+                logger.i { "Created ${result.size} weather forecasts" }
                 result
             }
         }
     }
 
-    override suspend fun updateForecastAsync(forecast: WeatherForecast) {
-        executeWithExceptionMapping("UpdateForecast") {
+    override suspend fun updateForecastAsync(forecast: WeatherForecast): Result<Unit> {
+        return executeWithExceptionMapping("UpdateForecast") {
             database.dailyForecastQueries.update(
                 minTemperature = forecast.minTemperature,
                 maxTemperature = forecast.maxTemperature,
@@ -327,17 +322,18 @@ class WeatherRepository(
                 windDirection = forecast.wind.direction,
                 windGust = forecast.wind.gust,
                 cloudCover = forecast.clouds.toDouble(),
-                precipitationChance = forecast.precipitation,
-                precipitationAmount = forecast.precipitation,
-                condition = forecast.description,
                 description = forecast.description,
                 icon = forecast.icon,
+                id = forecast.id.toLong(),
+                precipitationAmount = forecast.precipitation,
+                condition = forecast.description,
                 sunrise = forecast.sunrise.toEpochMilliseconds(),
                 sunset = forecast.sunset.toEpochMilliseconds(),
                 moonPhase = forecast.moonPhase,
                 moonrise = forecast.moonRise?.toEpochMilliseconds(),
                 moonset = forecast.moonSet?.toEpochMilliseconds(),
-                id = forecast.id.toLong()
+                precipitationChance = forecast.precipitation
+
             )
             val rowsAffected = database.dailyForecastQueries.changes().executeAsOne()
 
@@ -349,8 +345,8 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun deleteForecastAsync(forecast: WeatherForecast) {
-        executeWithExceptionMapping("DeleteForecast") {
+    override suspend fun deleteForecastAsync(forecast: WeatherForecast): Result<Unit> {
+        return executeWithExceptionMapping("DeleteForecast") {
             database.dailyForecastQueries.deleteById(forecast.id.toLong())
             val rowsAffected = database.dailyForecastQueries.changes().executeAsOne()
 
@@ -362,8 +358,8 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun deleteForecastsByWeatherIdAsync(weatherId: Int) {
-        executeWithExceptionMapping("DeleteForecastsByWeatherId") {
+    override suspend fun deleteForecastsByWeatherIdAsync(weatherId: Int): Result<Unit> {
+        return executeWithExceptionMapping("DeleteForecastsByWeatherId") {
             database.dailyForecastQueries.deleteByWeatherId(weatherId.toLong())
             val rowsAffected = database.dailyForecastQueries.changes().executeAsOne()
 
@@ -371,7 +367,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun getForecastsByWeatherIdAsync(weatherId: Int): List<WeatherForecast> {
+    override suspend fun getForecastsByWeatherIdAsync(weatherId: Int): Result<List<WeatherForecast>> {
         return executeWithExceptionMapping("GetForecastsByWeatherId") {
             database.dailyForecastQueries.selectByWeatherId(weatherId.toLong())
                 .executeAsList()
@@ -383,7 +379,7 @@ class WeatherRepository(
         weatherId: Int,
         startDate: Instant,
         endDate: Instant
-    ): List<WeatherForecast> {
+    ): Result<List<WeatherForecast>> {
         return executeWithExceptionMapping("GetForecastsByWeatherAndDateRange") {
             database.dailyForecastQueries.selectByWeatherAndDateRange(
                 weatherId.toLong(),
@@ -394,7 +390,7 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun getForecastByWeatherAndDateAsync(weatherId: Int, date: Instant): WeatherForecast? {
+    override suspend fun getForecastByWeatherAndDateAsync(weatherId: Int, date: Instant): Result<WeatherForecast?> {
         return executeWithExceptionMapping("GetForecastByWeatherAndDate") {
             val entity = database.dailyForecastQueries.selectByDate(
                 weatherId.toLong(),
@@ -404,283 +400,68 @@ class WeatherRepository(
         }
     }
 
-    override suspend fun addHourlyForecastAsync(hourlyForecast: HourlyForecast): HourlyForecast {
-        return executeWithExceptionMapping("AddHourlyForecast") {
-            database.hourlyForecastQueries.insert(
-                weatherId = hourlyForecast.weatherId.toLong(),
-                forecastTime = hourlyForecast.dateTime.toEpochMilliseconds(),
-                temperature = hourlyForecast.temperature,
-                feelsLike = hourlyForecast.feelsLike,
-                humidity = hourlyForecast.humidity.toDouble(),
-                pressure = hourlyForecast.pressure.toDouble(),
-                visibility = hourlyForecast.visibility.toDouble(),
-                uvIndex = hourlyForecast.uvIndex,
-                windSpeed = hourlyForecast.wind.speed,
-                windDirection = hourlyForecast.wind.direction,
-                windGust = hourlyForecast.wind.gust,
-                cloudCover = hourlyForecast.clouds.toDouble(),
-                precipitationChance = hourlyForecast.probabilityOfPrecipitation,
-                precipitationAmount = null,
-                condition = hourlyForecast.description,
-                description = hourlyForecast.description,
-                icon = hourlyForecast.icon
-            )
-
-            val id = database.hourlyForecastQueries.lastInsertRowId().executeAsOne()
-            val savedHourlyForecast = HourlyForecast.fromPersistence(
-                id = id.toInt(),
-                weatherId = hourlyForecast.weatherId,
-                dateTime = hourlyForecast.dateTime,
-                temperature = hourlyForecast.temperature,
-                feelsLike = hourlyForecast.feelsLike,
-                description = hourlyForecast.description,
-                icon = hourlyForecast.icon,
-                wind = hourlyForecast.wind,
-                humidity = hourlyForecast.humidity,
-                pressure = hourlyForecast.pressure,
-                clouds = hourlyForecast.clouds,
-                uvIndex = hourlyForecast.uvIndex,
-                probabilityOfPrecipitation = hourlyForecast.probabilityOfPrecipitation,
-                visibility = hourlyForecast.visibility,
-                dewPoint = hourlyForecast.dewPoint
-            )
-
-            logger.i { "Created hourly forecast with ID ${savedHourlyForecast.id}" }
-            savedHourlyForecast
-        }
-    }
-
-    override suspend fun addHourlyForecastsAsync(hourlyForecasts: List<HourlyForecast>): List<HourlyForecast> {
-        return executeWithExceptionMapping("AddHourlyForecasts") {
-            if (hourlyForecasts.isEmpty()) return@executeWithExceptionMapping hourlyForecasts
-
-            database.transactionWithResult {
-                val result = mutableListOf<HourlyForecast>()
-
-                hourlyForecasts.forEach { hourlyForecast ->
-                    database.hourlyForecastQueries.insert(
-                        weatherId = hourlyForecast.weatherId.toLong(),
-                        forecastTime = hourlyForecast.dateTime.toEpochMilliseconds(),
-                        temperature = hourlyForecast.temperature,
-                        feelsLike = hourlyForecast.feelsLike,
-                        humidity = hourlyForecast.humidity.toDouble(),
-                        pressure = hourlyForecast.pressure.toDouble(),
-                        visibility = hourlyForecast.visibility.toDouble(),
-                        uvIndex = hourlyForecast.uvIndex,
-                        windSpeed = hourlyForecast.wind.speed,
-                        windDirection = hourlyForecast.wind.direction,
-                        windGust = hourlyForecast.wind.gust,
-                        cloudCover = hourlyForecast.clouds.toDouble(),
-                        precipitationChance = hourlyForecast.probabilityOfPrecipitation,
-                        precipitationAmount = null,
-                        condition = hourlyForecast.description,
-                        description = hourlyForecast.description,
-                        icon = hourlyForecast.icon
-                    )
-
-                    val id = database.hourlyForecastQueries.lastInsertRowId().executeAsOne()
-                    val savedHourlyForecast = HourlyForecast.fromPersistence(
-                        id = id.toInt(),
-                        weatherId = hourlyForecast.weatherId,
-                        dateTime = hourlyForecast.dateTime,
-                        temperature = hourlyForecast.temperature,
-                        feelsLike = hourlyForecast.feelsLike,
-                        description = hourlyForecast.description,
-                        icon = hourlyForecast.icon,
-                        wind = hourlyForecast.wind,
-                        humidity = hourlyForecast.humidity,
-                        pressure = hourlyForecast.pressure,
-                        clouds = hourlyForecast.clouds,
-                        uvIndex = hourlyForecast.uvIndex,
-                        probabilityOfPrecipitation = hourlyForecast.probabilityOfPrecipitation,
-                        visibility = hourlyForecast.visibility,
-                        dewPoint = hourlyForecast.dewPoint
-                    )
-                    result.add(savedHourlyForecast)
-                }
-
-                logger.i { "Bulk created ${result.size} hourly forecasts" }
-                result
-            }
-        }
-    }
-
-    override suspend fun updateHourlyForecastAsync(hourlyForecast: HourlyForecast) {
-        executeWithExceptionMapping("UpdateHourlyForecast") {
-            database.hourlyForecastQueries.update(
-                temperature = hourlyForecast.temperature,
-                feelsLike = hourlyForecast.feelsLike,
-                humidity = hourlyForecast.humidity.toDouble(),
-                pressure = hourlyForecast.pressure.toDouble(),
-                visibility = hourlyForecast.visibility.toDouble(),
-                uvIndex = hourlyForecast.uvIndex,
-                windSpeed = hourlyForecast.wind.speed,
-                windDirection = hourlyForecast.wind.direction,
-                windGust = hourlyForecast.wind.gust,
-                cloudCover = hourlyForecast.clouds.toDouble(),
-                precipitationChance = hourlyForecast.probabilityOfPrecipitation,
-                precipitationAmount = null,
-                condition = hourlyForecast.description,
-                description = hourlyForecast.description,
-                icon = hourlyForecast.icon,
-                id = hourlyForecast.id.toLong()
-            )
-            val rowsAffected = database.hourlyForecastQueries.changes().executeAsOne()
-
-            if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Hourly forecast with ID ${hourlyForecast.id} not found for update")
-            }
-
-            logger.i { "Updated hourly forecast with ID ${hourlyForecast.id}" }
-        }
-    }
-
-    override suspend fun deleteHourlyForecastAsync(hourlyForecast: HourlyForecast) {
-        executeWithExceptionMapping("DeleteHourlyForecast") {
-            database.hourlyForecastQueries.deleteById(hourlyForecast.id.toLong())
-            val rowsAffected = database.hourlyForecastQueries.changes().executeAsOne()
-
-            if (rowsAffected == 0L) {
-                throw IllegalArgumentException("Hourly forecast with ID ${hourlyForecast.id} not found for deletion")
-            }
-
-            logger.i { "Deleted hourly forecast with ID ${hourlyForecast.id}" }
-        }
-    }
-
-    override suspend fun deleteHourlyForecastsByWeatherIdAsync(weatherId: Int) {
-        executeWithExceptionMapping("DeleteHourlyForecastsByWeatherId") {
-            database.hourlyForecastQueries.deleteByWeatherId(weatherId.toLong())
-            val rowsAffected = database.hourlyForecastQueries.changes().executeAsOne()
-
-            logger.i { "Deleted $rowsAffected hourly forecasts for weather ID $weatherId" }
-        }
-    }
-
-    override suspend fun getHourlyForecastsByWeatherIdAsync(weatherId: Int): List<HourlyForecast> {
-        return executeWithExceptionMapping("GetHourlyForecastsByWeatherId") {
-            database.hourlyForecastQueries.selectByWeatherId(weatherId.toLong())
-                .executeAsList()
-                .map { mapHourlyForecastToDomain(it) }
-        }
-    }
-
-    override suspend fun getHourlyForecastsByWeatherAndTimeRangeAsync(
-        weatherId: Int,
-        startTime: Instant,
-        endTime: Instant
-    ): List<HourlyForecast> {
-        return executeWithExceptionMapping("GetHourlyForecastsByWeatherAndTimeRange") {
-            database.hourlyForecastQueries.selectByWeatherAndTimeRange(
-                weatherId.toLong(),
-                startTime.toEpochMilliseconds(),
-                endTime.toEpochMilliseconds()
-            ).executeAsList()
-                .map { mapHourlyForecastToDomain(it) }
-        }
-    }
-
-    override suspend fun getNext24HoursForecastAsync(weatherId: Int, fromTime: Instant): List<HourlyForecast> {
-        return executeWithExceptionMapping("GetNext24HoursForecast") {
-            val endTime = fromTime.plus(24.hours)
-            database.hourlyForecastQueries.selectNext24Hours(
-                weatherId.toLong(),
-                fromTime.toEpochMilliseconds(),
-                endTime.toEpochMilliseconds()
-            ).executeAsList()
-                .map { mapHourlyForecastToDomain(it) }
-        }
-    }
-
-    override suspend fun getHourlyForecastsForDayAsync(weatherId: Int, date: Instant): List<HourlyForecast> {
-        return executeWithExceptionMapping("GetHourlyForecastsForDay") {
-            val startOfDay = date.toEpochMilliseconds()
-            val endOfDay = startOfDay + 86400000L // 24 hours in milliseconds
-            database.hourlyForecastQueries.selectForDay(
-                weatherId.toLong(),
-                startOfDay,
-                endOfDay
-            ).executeAsList()
-                .map { mapHourlyForecastToDomain(it) }
-        }
-    }
-
-    override suspend fun cleanupOldForecastsAsync(olderThan: Instant): Int {
-        return executeWithExceptionMapping("CleanupOldForecasts") {
-            database.dailyForecastQueries.deleteOlderThan(olderThan.toEpochMilliseconds())
-            val rowsAffected = database.dailyForecastQueries.changes().executeAsOne()
-
-            logger.i { "Cleaned up $rowsAffected old daily forecasts" }
-            rowsAffected.toInt()
-        }
-    }
-
-    override suspend fun cleanupOldHourlyForecastsAsync(olderThan: Instant): Int {
-        return executeWithExceptionMapping("CleanupOldHourlyForecasts") {
-            database.hourlyForecastQueries.deleteOlderThan(olderThan.toEpochMilliseconds())
-            val rowsAffected = database.hourlyForecastQueries.changes().executeAsOne()
-
-            logger.i { "Cleaned up $rowsAffected old hourly forecasts" }
-            rowsAffected.toInt()
-        }
-    }
-
     override fun clearCache() {
-        if (cacheMutex.tryLock()) {
-            try {
-                weatherCache.clear()
-                logger.i { "Weather cache cleared" }
-            } finally {
-                cacheMutex.unlock()
-            }
+        cacheMutex.tryLock()
+        try {
+            weatherCache.clear()
+            logger.d { "Cleared all weather cache" }
+        } finally {
+            cacheMutex.unlock()
         }
     }
 
     override fun clearCache(id: Int) {
-        if (cacheMutex.tryLock()) {
-            try {
-                weatherCache.remove(id)
-                logger.d { "Removed weather $id from cache" }
-            } finally {
-                cacheMutex.unlock()
-            }
+        cacheMutex.tryLock()
+        try {
+            weatherCache.remove(id)
+            logger.d { "Cleared weather cache for ID $id" }
+        } finally {
+            cacheMutex.unlock()
         }
     }
 
     override fun clearCache(locationId: Int, cacheType: WeatherCacheType) {
-        if (cacheMutex.tryLock()) {
-            try {
-                when (cacheType) {
-                    WeatherCacheType.WEATHER -> {
-                        weatherCache.entries.removeAll { it.value.weather.locationId == locationId }
-                    }
-                    WeatherCacheType.ALL -> {
-                        weatherCache.entries.removeAll { it.value.weather.locationId == locationId }
-                    }
-                    else -> {
-                        // For forecast-specific cache types, we'd need separate caches
-                        logger.d { "Cache type $cacheType not implemented for location-specific clearing" }
-                    }
+        cacheMutex.tryLock()
+        try {
+            when (cacheType) {
+                WeatherCacheType.BY_LOCATION_ID -> {
+                    weatherCache.entries.removeAll { it.value.weather.locationId == locationId }
+                    logger.d { "Cleared weather cache for location ID $locationId" }
                 }
-                logger.d { "Cleared weather cache for location $locationId, type $cacheType" }
-            } finally {
-                cacheMutex.unlock()
+                WeatherCacheType.ALL -> {
+                    weatherCache.clear()
+                    logger.d { "Cleared all weather cache" }
+                }
+                else -> {
+                    logger.d { "Cache type $cacheType not handled for location-based clearing" }
+                }
             }
+        } finally {
+            cacheMutex.unlock()
         }
     }
 
     private fun mapToDomain(entity: com.x3squaredcircles.photographyshared.db.Weather): Weather {
+        val coordinate = Coordinate.create(
+            latitude = entity.latitude,
+            longitude = entity.longitude
+        )
+
+
+
         return Weather.fromPersistence(
             id = entity.id.toInt(),
             locationId = entity.locationId.toInt(),
-            coordinate = Coordinate.create(entity.latitude, entity.longitude),
+            coordinate = coordinate,
             timezone = entity.timezone,
             timezoneOffset = entity.timezoneOffset.toInt(),
-            lastUpdate = Instant.fromEpochMilliseconds(entity.lastUpdate)
+            lastUpdate = Instant.fromEpochMilliseconds(entity.lastUpdate),
+
+
         )
     }
 
-    private fun mapForecastToDomain(entity: com.x3squaredcircles.photographyshared.db.DailyForecast): WeatherForecast {
+    private fun mapForecastToDomain(entity: DailyForecast): WeatherForecast {
         val wind = WindInfo(
             speed = entity.windSpeed ?: 0.0,
             direction = entity.windDirection ?: 0.0,
@@ -691,22 +472,22 @@ class WeatherRepository(
             id = entity.id.toInt(),
             weatherId = entity.weatherId.toInt(),
             date = Instant.fromEpochMilliseconds(entity.forecastDate),
-            sunrise = Instant.fromEpochMilliseconds(entity.sunrise ?: 0L),
-            sunset = Instant.fromEpochMilliseconds(entity.sunset ?: 0L),
-            temperature = (entity.minTemperature ?: 0.0 + entity.maxTemperature!! ?: 0.0) / 2,
             minTemperature = entity.minTemperature ?: 0.0,
             maxTemperature = entity.maxTemperature ?: 0.0,
-            description = entity.description ?: "",
-            icon = entity.icon ?: "",
-            wind = wind,
             humidity = entity.humidity?.toInt() ?: 0,
             pressure = entity.pressure?.toInt() ?: 0,
-            clouds = entity.cloudCover?.toInt() ?: 0,
             uvIndex = entity.uvIndex ?: 0.0,
-            precipitation = entity.precipitationAmount,
+            wind = wind,
+            clouds = entity.cloudCover?.toInt() ?: 0,
+            precipitation = entity.precipitationChance ?: 0.0,
+            description = entity.description ?: "",
+            icon = entity.icon ?: "",
+            sunrise = Instant.fromEpochMilliseconds(entity.sunrise!!),
+            sunset = Instant.fromEpochMilliseconds(entity.sunset!!),
+            moonPhase = entity.moonPhase ?: 0.0,
             moonRise = entity.moonrise?.let { Instant.fromEpochMilliseconds(it) },
             moonSet = entity.moonset?.let { Instant.fromEpochMilliseconds(it) },
-            moonPhase = entity.moonPhase ?: 0.0
+            temperature = entity.maxTemperature!!
         )
     }
 
@@ -739,12 +520,14 @@ class WeatherRepository(
     private suspend fun <T> executeWithExceptionMapping(
         operationName: String,
         operation: suspend () -> T
-    ): T {
+    ): Result<T> {
         return try {
-            operation()
+            val result = operation()
+            Result.success(result)
         } catch (ex: Exception) {
             logger.e(ex) { "Repository operation $operationName failed for weather" }
-            throw exceptionMapper.mapToWeatherDomainException(ex, operationName)
+            val mappedException = exceptionMapper.mapToWeatherDomainException(ex, operationName)
+            Result.failure(mappedException.message ?: "Unknown error", mappedException)
         }
     }
 

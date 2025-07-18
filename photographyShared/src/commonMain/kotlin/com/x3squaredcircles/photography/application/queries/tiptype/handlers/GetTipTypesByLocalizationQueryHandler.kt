@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypesB
 import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypesByLocalizationQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipTypeRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetTipTypesByLocalizationQueryHandler(
@@ -13,24 +14,24 @@ class GetTipTypesByLocalizationQueryHandler(
 ) : IQueryHandler<GetTipTypesByLocalizationQuery, GetTipTypesByLocalizationQueryResult> {
 
     override suspend fun handle(query: GetTipTypesByLocalizationQuery): GetTipTypesByLocalizationQueryResult {
-        return try {
-            logger.d { "Handling GetTipTypesByLocalizationQuery with localization: ${query.localization}" }
+        logger.d { "Handling GetTipTypesByLocalizationQuery with localization: ${query.localization}" }
 
-            val tipTypes = tipTypeRepository.getTipTypesByLocalizationAsync(query.localization)
-
-            logger.i { "Retrieved ${tipTypes.size} tip types for localization: ${query.localization}" }
-
-            GetTipTypesByLocalizationQueryResult(
-                tipTypes = tipTypes,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get tip types by localization: ${query.localization}" }
-            GetTipTypesByLocalizationQueryResult(
-                tipTypes = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipTypeRepository.getTipTypesByLocalizationAsync(query.localization)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} tip types for localization: ${query.localization}" }
+                GetTipTypesByLocalizationQueryResult(
+                    tipTypes = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get tip types by localization: ${query.localization} - ${result.error}" }
+                GetTipTypesByLocalizationQueryResult(
+                    tipTypes = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

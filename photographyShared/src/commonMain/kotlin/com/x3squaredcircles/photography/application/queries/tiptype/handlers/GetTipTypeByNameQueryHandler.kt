@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypeBy
 import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypeByNameQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipTypeRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetTipTypeByNameQueryHandler(
@@ -13,24 +14,24 @@ class GetTipTypeByNameQueryHandler(
 ) : IQueryHandler<GetTipTypeByNameQuery, GetTipTypeByNameQueryResult> {
 
     override suspend fun handle(query: GetTipTypeByNameQuery): GetTipTypeByNameQueryResult {
-        return try {
-            logger.d { "Handling GetTipTypeByNameQuery with name: ${query.name}" }
+        logger.d { "Handling GetTipTypeByNameQuery with name: ${query.name}" }
 
-            val tipType = tipTypeRepository.getByNameAsync(query.name)
-
-            logger.i { "Retrieved tip type with name: ${query.name}, found: ${tipType != null}" }
-
-            GetTipTypeByNameQueryResult(
-                tipType = tipType,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get tip type by name: ${query.name}" }
-            GetTipTypeByNameQueryResult(
-                tipType = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipTypeRepository.getByNameAsync(query.name)) {
+            is Result.Success -> {
+                logger.i { "Retrieved tip type with name: ${query.name}, found: ${result.data != null}" }
+                GetTipTypeByNameQueryResult(
+                    tipType = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get tip type by name: ${query.name} - ${result.error}" }
+                GetTipTypeByNameQueryResult(
+                    tipType = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

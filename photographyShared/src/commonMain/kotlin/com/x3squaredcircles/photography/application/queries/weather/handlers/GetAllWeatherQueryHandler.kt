@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.weather.GetAllWeathe
 import com.x3squaredcircles.photography.application.queries.weather.GetAllWeatherQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllWeatherQueryHandler(
@@ -13,24 +14,24 @@ class GetAllWeatherQueryHandler(
 ) : IQueryHandler<GetAllWeatherQuery, GetAllWeatherQueryResult> {
 
     override suspend fun handle(query: GetAllWeatherQuery): GetAllWeatherQueryResult {
-        return try {
-            logger.d { "Handling GetAllWeatherQuery" }
+        logger.d { "Handling GetAllWeatherQuery" }
 
-            val weather = weatherRepository.getAllAsync()
-
-            logger.i { "Retrieved ${weather.size} weather records" }
-
-            GetAllWeatherQueryResult(
-                weather = weather,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all weather" }
-            GetAllWeatherQueryResult(
-                weather = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = weatherRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} weather records" }
+                GetAllWeatherQueryResult(
+                    weather = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all weather: ${result.error}" }
+                GetAllWeatherQueryResult(
+                    weather = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

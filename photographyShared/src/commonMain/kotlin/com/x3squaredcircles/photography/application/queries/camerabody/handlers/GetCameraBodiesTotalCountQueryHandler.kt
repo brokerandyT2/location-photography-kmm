@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.camerabody.GetCamera
 import com.x3squaredcircles.photography.application.queries.camerabody.GetCameraBodiesTotalCountQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetCameraBodiesTotalCountQueryHandler(
@@ -13,24 +14,24 @@ class GetCameraBodiesTotalCountQueryHandler(
 ) : IQueryHandler<GetCameraBodiesTotalCountQuery, GetCameraBodiesTotalCountQueryResult> {
 
     override suspend fun handle(query: GetCameraBodiesTotalCountQuery): GetCameraBodiesTotalCountQueryResult {
-        return try {
-            logger.d { "Handling GetCameraBodiesTotalCountQuery" }
+        logger.d { "Handling GetCameraBodiesTotalCountQuery" }
 
-            val count = cameraBodyRepository.getTotalCountAsync()
-
-            logger.i { "Retrieved total camera bodies count: $count" }
-
-            GetCameraBodiesTotalCountQueryResult(
-                count = count,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get camera bodies total count" }
-            GetCameraBodiesTotalCountQueryResult(
-                count = 0L,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = cameraBodyRepository.getTotalCountAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved total camera bodies count: ${result.data}" }
+                GetCameraBodiesTotalCountQueryResult(
+                    count = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get camera bodies total count: ${result.error}" }
+                GetCameraBodiesTotalCountQueryResult(
+                    count = 0L,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

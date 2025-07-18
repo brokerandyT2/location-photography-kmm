@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.weather.GetWeatherBy
 import com.x3squaredcircles.photography.application.queries.weather.GetWeatherByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetWeatherByIdQueryHandler(
@@ -13,24 +14,24 @@ class GetWeatherByIdQueryHandler(
 ) : IQueryHandler<GetWeatherByIdQuery, GetWeatherByIdQueryResult> {
 
     override suspend fun handle(query: GetWeatherByIdQuery): GetWeatherByIdQueryResult {
-        return try {
-            logger.d { "Handling GetWeatherByIdQuery with id: ${query.id}" }
+        logger.d { "Handling GetWeatherByIdQuery with id: ${query.id}" }
 
-            val weather = weatherRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved weather with id: ${query.id}, found: ${weather != null}" }
-
-            GetWeatherByIdQueryResult(
-                weather = weather,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get weather by id: ${query.id}" }
-            GetWeatherByIdQueryResult(
-                weather = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = weatherRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved weather with id: ${query.id}, found: ${result.data != null}" }
+                GetWeatherByIdQueryResult(
+                    weather = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get weather by id: ${query.id} - ${result.error}" }
+                GetWeatherByIdQueryResult(
+                    weather = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

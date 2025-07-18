@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tip.TipExistsByIdQue
 import com.x3squaredcircles.photography.application.queries.tip.TipExistsByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class TipExistsByIdQueryHandler(
@@ -13,24 +14,24 @@ class TipExistsByIdQueryHandler(
 ) : IQueryHandler<TipExistsByIdQuery, TipExistsByIdQueryResult> {
 
     override suspend fun handle(query: TipExistsByIdQuery): TipExistsByIdQueryResult {
-        return try {
-            logger.d { "Handling TipExistsByIdQuery with id: ${query.id}" }
+        logger.d { "Handling TipExistsByIdQuery with id: ${query.id}" }
 
-            val exists = tipRepository.existsByIdAsync(query.id)
-
-            logger.i { "Tip exists check for id ${query.id}: $exists" }
-
-            TipExistsByIdQueryResult(
-                exists = exists,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to check if tip exists by id: ${query.id}" }
-            TipExistsByIdQueryResult(
-                exists = false,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipRepository.existsByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Tip exists check for id ${query.id}: ${result.data}" }
+                TipExistsByIdQueryResult(
+                    exists = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to check if tip exists by id: ${query.id} - ${result.error}" }
+                TipExistsByIdQueryResult(
+                    exists = false,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

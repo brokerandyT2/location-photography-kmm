@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lens.GetAllLensesQue
 import com.x3squaredcircles.photography.application.queries.lens.GetAllLensesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllLensesQueryHandler(
@@ -13,24 +14,24 @@ class GetAllLensesQueryHandler(
 ) : IQueryHandler<GetAllLensesQuery, GetAllLensesQueryResult> {
 
     override suspend fun handle(query: GetAllLensesQuery): GetAllLensesQueryResult {
-        return try {
-            logger.d { "Handling GetAllLensesQuery" }
+        logger.d { "Handling GetAllLensesQuery" }
 
-            val lenses = lensRepository.getAllAsync()
-
-            logger.i { "Retrieved ${lenses.size} lenses" }
-
-            GetAllLensesQueryResult(
-                lenses = lenses,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all lenses" }
-            GetAllLensesQueryResult(
-                lenses = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} lenses" }
+                GetAllLensesQueryResult(
+                    lenses = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all lenses: ${result.error}" }
+                GetAllLensesQueryResult(
+                    lenses = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ package com.x3squaredcircles.photography.application.queries.location.handlers
 import com.x3squaredcircles.photography.application.queries.location.GetAllLocationsQuery
 import com.x3squaredcircles.photography.application.queries.location.GetAllLocationsQueryResult
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 
@@ -13,28 +14,30 @@ class GetAllLocationsQueryHandler(
 ) : IQueryHandler<GetAllLocationsQuery, GetAllLocationsQueryResult> {
 
     override suspend fun handle(query: GetAllLocationsQuery): GetAllLocationsQueryResult {
-        return try {
-            logger.d { "Handling GetAllLocationsQuery with includeDeleted: ${query.includeDeleted}" }
+        logger.d { "Handling GetAllLocationsQuery with includeDeleted: ${query.includeDeleted}" }
 
-            val locations = if (query.includeDeleted) {
-                locationRepository.getAllAsync()
-            } else {
-                locationRepository.getActiveAsync()
+        val result = if (query.includeDeleted) {
+            locationRepository.getAllAsync()
+        } else {
+            locationRepository.getActiveAsync()
+        }
+
+        return when (result) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} locations" }
+                GetAllLocationsQueryResult(
+                    locations = result.data,
+                    isSuccess = true
+                )
             }
-
-            logger.i { "Retrieved ${locations.size} locations" }
-
-            GetAllLocationsQueryResult(
-                locations = locations,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all locations" }
-            GetAllLocationsQueryResult(
-                locations = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+            is Result.Failure -> {
+                logger.e { "Failed to get all locations: ${result.error}" }
+                GetAllLocationsQueryResult(
+                    locations = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

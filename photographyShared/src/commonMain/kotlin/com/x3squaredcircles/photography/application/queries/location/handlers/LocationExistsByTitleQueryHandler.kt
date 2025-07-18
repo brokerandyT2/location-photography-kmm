@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.LocationExi
 import com.x3squaredcircles.photography.application.queries.location.LocationExistsByTitleQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class LocationExistsByTitleQueryHandler(
@@ -13,27 +14,27 @@ class LocationExistsByTitleQueryHandler(
 ) : IQueryHandler<LocationExistsByTitleQuery, LocationExistsByTitleQueryResult> {
 
     override suspend fun handle(query: LocationExistsByTitleQuery): LocationExistsByTitleQueryResult {
-        return try {
-            logger.d { "Handling LocationExistsByTitleQuery with title: ${query.title}, excludeId: ${query.excludeId}" }
+        logger.d { "Handling LocationExistsByTitleQuery with title: ${query.title}, excludeId: ${query.excludeId}" }
 
-            val exists = locationRepository.existsByTitleAsync(
-                title = query.title,
-                excludeId = query.excludeId
-            )
-
-            logger.i { "Location exists check for title '${query.title}' (excluding id ${query.excludeId}): $exists" }
-
-            LocationExistsByTitleQueryResult(
-                exists = exists,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to check if location exists by title: ${query.title}" }
-            LocationExistsByTitleQueryResult(
-                exists = false,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.existsByTitleAsync(
+            title = query.title,
+            excludeId = query.excludeId
+        )) {
+            is Result.Success -> {
+                logger.i { "Location exists check for title '${query.title}' (excluding id ${query.excludeId}): ${result.data}" }
+                LocationExistsByTitleQueryResult(
+                    exists = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to check if location exists by title: ${query.title} - ${result.error}" }
+                LocationExistsByTitleQueryResult(
+                    exists = false,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

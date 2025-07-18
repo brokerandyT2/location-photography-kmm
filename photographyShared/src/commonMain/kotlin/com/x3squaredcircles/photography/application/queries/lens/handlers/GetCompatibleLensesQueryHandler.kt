@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lens.GetCompatibleLe
 import com.x3squaredcircles.photography.application.queries.lens.GetCompatibleLensesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetCompatibleLensesQueryHandler(
@@ -13,24 +14,24 @@ class GetCompatibleLensesQueryHandler(
 ) : IQueryHandler<GetCompatibleLensesQuery, GetCompatibleLensesQueryResult> {
 
     override suspend fun handle(query: GetCompatibleLensesQuery): GetCompatibleLensesQueryResult {
-        return try {
-            logger.d { "Handling GetCompatibleLensesQuery with cameraBodyId: ${query.cameraBodyId}" }
+        logger.d { "Handling GetCompatibleLensesQuery with cameraBodyId: ${query.cameraBodyId}" }
 
-            val lenses = lensRepository.getCompatibleLensesAsync(query.cameraBodyId)
-
-            logger.i { "Retrieved ${lenses.size} compatible lenses for cameraBodyId: ${query.cameraBodyId}" }
-
-            GetCompatibleLensesQueryResult(
-                lenses = lenses,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get compatible lenses for cameraBodyId: ${query.cameraBodyId}" }
-            GetCompatibleLensesQueryResult(
-                lenses = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensRepository.getCompatibleLensesAsync(query.cameraBodyId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} compatible lenses for cameraBodyId: ${query.cameraBodyId}" }
+                GetCompatibleLensesQueryResult(
+                    lenses = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get compatible lenses for cameraBodyId: ${query.cameraBodyId} - ${result.error}" }
+                GetCompatibleLensesQueryResult(
+                    lenses = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

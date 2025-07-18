@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.camerabody.GetUserCr
 import com.x3squaredcircles.photography.application.queries.camerabody.GetUserCreatedCameraBodiesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetUserCreatedCameraBodiesQueryHandler(
@@ -13,24 +14,24 @@ class GetUserCreatedCameraBodiesQueryHandler(
 ) : IQueryHandler<GetUserCreatedCameraBodiesQuery, GetUserCreatedCameraBodiesQueryResult> {
 
     override suspend fun handle(query: GetUserCreatedCameraBodiesQuery): GetUserCreatedCameraBodiesQueryResult {
-        return try {
-            logger.d { "Handling GetUserCreatedCameraBodiesQuery" }
+        logger.d { "Handling GetUserCreatedCameraBodiesQuery" }
 
-            val cameraBodies = cameraBodyRepository.getUserCreatedAsync()
-
-            logger.i { "Retrieved ${cameraBodies.size} user created camera bodies" }
-
-            GetUserCreatedCameraBodiesQueryResult(
-                cameraBodies = cameraBodies,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get user created camera bodies" }
-            GetUserCreatedCameraBodiesQueryResult(
-                cameraBodies = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = cameraBodyRepository.getUserCreatedAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} user created camera bodies" }
+                GetUserCreatedCameraBodiesQueryResult(
+                    cameraBodies = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get user created camera bodies: ${result.error}" }
+                GetUserCreatedCameraBodiesQueryResult(
+                    cameraBodies = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

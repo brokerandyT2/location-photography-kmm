@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.camerabody.GetCamera
 import com.x3squaredcircles.photography.application.queries.camerabody.GetCameraBodiesByMountTypeQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetCameraBodiesByMountTypeQueryHandler(
@@ -13,24 +14,24 @@ class GetCameraBodiesByMountTypeQueryHandler(
 ) : IQueryHandler<GetCameraBodiesByMountTypeQuery, GetCameraBodiesByMountTypeQueryResult> {
 
     override suspend fun handle(query: GetCameraBodiesByMountTypeQuery): GetCameraBodiesByMountTypeQueryResult {
-        return try {
-            logger.d { "Handling GetCameraBodiesByMountTypeQuery with mountType: ${query.mountType}" }
+        logger.d { "Handling GetCameraBodiesByMountTypeQuery with mountType: ${query.mountType}" }
 
-            val cameraBodies = cameraBodyRepository.getByMountTypeAsync(query.mountType)
-
-            logger.i { "Retrieved ${cameraBodies.size} camera bodies for mountType: ${query.mountType}" }
-
-            GetCameraBodiesByMountTypeQueryResult(
-                cameraBodies = cameraBodies,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get camera bodies by mount type: ${query.mountType}" }
-            GetCameraBodiesByMountTypeQueryResult(
-                cameraBodies = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = cameraBodyRepository.getByMountTypeAsync(query.mountType)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} camera bodies for mountType: ${query.mountType}" }
+                GetCameraBodiesByMountTypeQueryResult(
+                    cameraBodies = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get camera bodies by mount type: ${query.mountType} - ${result.error}" }
+                GetCameraBodiesByMountTypeQueryResult(
+                    cameraBodies = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

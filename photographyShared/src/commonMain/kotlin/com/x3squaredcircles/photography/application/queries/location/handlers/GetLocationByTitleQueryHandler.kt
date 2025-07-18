@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.GetLocation
 import com.x3squaredcircles.photography.application.queries.location.GetLocationByTitleQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetLocationByTitleQueryHandler(
@@ -13,24 +14,24 @@ class GetLocationByTitleQueryHandler(
 ) : IQueryHandler<GetLocationByTitleQuery, GetLocationByTitleQueryResult> {
 
     override suspend fun handle(query: GetLocationByTitleQuery): GetLocationByTitleQueryResult {
-        return try {
-            logger.d { "Handling GetLocationByTitleQuery with title: ${query.title}" }
+        logger.d { "Handling GetLocationByTitleQuery with title: ${query.title}" }
 
-            val location = locationRepository.getByTitleAsync(query.title)
-
-            logger.i { "Retrieved location with title: ${query.title}, found: ${location != null}" }
-
-            GetLocationByTitleQueryResult(
-                location = location,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get location by title: ${query.title}" }
-            GetLocationByTitleQueryResult(
-                location = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.getByTitleAsync(query.title)) {
+            is Result.Success -> {
+                logger.i { "Retrieved location with title: ${query.title}, found: ${result.data != null}" }
+                GetLocationByTitleQueryResult(
+                    location = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get location by title: ${query.title} - ${result.error}" }
+                GetLocationByTitleQueryResult(
+                    location = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

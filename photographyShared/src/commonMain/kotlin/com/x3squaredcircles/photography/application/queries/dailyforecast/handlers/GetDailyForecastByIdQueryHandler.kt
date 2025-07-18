@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.dailyforecast.GetDai
 import com.x3squaredcircles.photography.application.queries.dailyforecast.GetDailyForecastByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IDailyForecastRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetDailyForecastByIdQueryHandler(
@@ -13,24 +14,24 @@ class GetDailyForecastByIdQueryHandler(
 ) : IQueryHandler<GetDailyForecastByIdQuery, GetDailyForecastByIdQueryResult> {
 
     override suspend fun handle(query: GetDailyForecastByIdQuery): GetDailyForecastByIdQueryResult {
-        return try {
-            logger.d { "Handling GetDailyForecastByIdQuery with id: ${query.id}" }
+        logger.d { "Handling GetDailyForecastByIdQuery with id: ${query.id}" }
 
-            val dailyForecast = dailyForecastRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved daily forecast with id: ${query.id}, found: ${dailyForecast != null}" }
-
-            GetDailyForecastByIdQueryResult(
-                dailyForecast = dailyForecast,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get daily forecast by id: ${query.id}" }
-            GetDailyForecastByIdQueryResult(
-                dailyForecast = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = dailyForecastRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved daily forecast with id: ${query.id}, found: ${result.data != null}" }
+                GetDailyForecastByIdQueryResult(
+                    dailyForecast = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get daily forecast by id: ${query.id} - ${result.error}" }
+                GetDailyForecastByIdQueryResult(
+                    dailyForecast = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

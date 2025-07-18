@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.GetLocation
 import com.x3squaredcircles.photography.application.queries.location.GetLocationByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetLocationByIdQueryHandler(
@@ -13,24 +14,24 @@ class GetLocationByIdQueryHandler(
 ) : IQueryHandler<GetLocationByIdQuery, GetLocationByIdQueryResult> {
 
     override suspend fun handle(query: GetLocationByIdQuery): GetLocationByIdQueryResult {
-        return try {
-            logger.d { "Handling GetLocationByIdQuery with id: ${query.id}" }
+        logger.d { "Handling GetLocationByIdQuery with id: ${query.id}" }
 
-            val location = locationRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved location with id: ${query.id}, found: ${location != null}" }
-
-            GetLocationByIdQueryResult(
-                location = location,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get location by id: ${query.id}" }
-            GetLocationByIdQueryResult(
-                location = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved location with id: ${query.id}, found: ${result.data != null}" }
+                GetLocationByIdQueryResult(
+                    location = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get location by id: ${query.id} - ${result.error}" }
+                GetLocationByIdQueryResult(
+                    location = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

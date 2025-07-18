@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.weather.GetWeatherBy
 import com.x3squaredcircles.photography.application.queries.weather.GetWeatherByLocationIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetWeatherByLocationIdQueryHandler(
@@ -13,24 +14,24 @@ class GetWeatherByLocationIdQueryHandler(
 ) : IQueryHandler<GetWeatherByLocationIdQuery, GetWeatherByLocationIdQueryResult> {
 
     override suspend fun handle(query: GetWeatherByLocationIdQuery): GetWeatherByLocationIdQueryResult {
-        return try {
-            logger.d { "Handling GetWeatherByLocationIdQuery with locationId: ${query.locationId}" }
+        logger.d { "Handling GetWeatherByLocationIdQuery with locationId: ${query.locationId}" }
 
-            val weather = weatherRepository.getByLocationIdAsync(query.locationId)
-
-            logger.i { "Retrieved weather for location id: ${query.locationId}, found: ${weather != null}" }
-
-            GetWeatherByLocationIdQueryResult(
-                weather = weather,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get weather by location id: ${query.locationId}" }
-            GetWeatherByLocationIdQueryResult(
-                weather = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = weatherRepository.getByLocationIdAsync(query.locationId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved weather for location id: ${query.locationId}, found: ${result.data != null}" }
+                GetWeatherByLocationIdQueryResult(
+                    weather = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get weather by location id: ${query.locationId} - ${result.error}" }
+                GetWeatherByLocationIdQueryResult(
+                    weather = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

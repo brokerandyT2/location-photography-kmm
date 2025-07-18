@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.hourlyforecast.GetHo
 import com.x3squaredcircles.photography.application.queries.hourlyforecast.GetHourlyForecastsByLocationIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IHourlyForecastRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetHourlyForecastsByLocationIdQueryHandler(
@@ -13,24 +14,24 @@ class GetHourlyForecastsByLocationIdQueryHandler(
 ) : IQueryHandler<GetHourlyForecastsByLocationIdQuery, GetHourlyForecastsByLocationIdQueryResult> {
 
     override suspend fun handle(query: GetHourlyForecastsByLocationIdQuery): GetHourlyForecastsByLocationIdQueryResult {
-        return try {
-            logger.d { "Handling GetHourlyForecastsByLocationIdQuery with locationId: ${query.locationId}" }
+        logger.d { "Handling GetHourlyForecastsByLocationIdQuery with locationId: ${query.locationId}" }
 
-            val hourlyForecasts = hourlyForecastRepository.getByLocationIdAsync(query.locationId)
-
-            logger.i { "Retrieved ${hourlyForecasts.size} hourly forecasts for locationId: ${query.locationId}" }
-
-            GetHourlyForecastsByLocationIdQueryResult(
-                hourlyForecasts = hourlyForecasts,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get hourly forecasts by location id: ${query.locationId}" }
-            GetHourlyForecastsByLocationIdQueryResult(
-                hourlyForecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = hourlyForecastRepository.getByLocationIdAsync(query.locationId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} hourly forecasts for locationId: ${query.locationId}" }
+                GetHourlyForecastsByLocationIdQueryResult(
+                    hourlyForecasts = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get hourly forecasts by location id: ${query.locationId} - ${result.error}" }
+                GetHourlyForecastsByLocationIdQueryResult(
+                    hourlyForecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

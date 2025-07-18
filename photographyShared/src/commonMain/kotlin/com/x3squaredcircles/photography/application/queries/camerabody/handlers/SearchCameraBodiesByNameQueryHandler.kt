@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.camerabody.SearchCam
 import com.x3squaredcircles.photography.application.queries.camerabody.SearchCameraBodiesByNameQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class SearchCameraBodiesByNameQueryHandler(
@@ -13,24 +14,24 @@ class SearchCameraBodiesByNameQueryHandler(
 ) : IQueryHandler<SearchCameraBodiesByNameQuery, SearchCameraBodiesByNameQueryResult> {
 
     override suspend fun handle(query: SearchCameraBodiesByNameQuery): SearchCameraBodiesByNameQueryResult {
-        return try {
-            logger.d { "Handling SearchCameraBodiesByNameQuery with searchTerm: ${query.searchTerm}" }
+        logger.d { "Handling SearchCameraBodiesByNameQuery with searchTerm: ${query.searchTerm}" }
 
-            val cameraBodies = cameraBodyRepository.searchByNameAsync(query.searchTerm)
-
-            logger.i { "Retrieved ${cameraBodies.size} camera bodies for search term: ${query.searchTerm}" }
-
-            SearchCameraBodiesByNameQueryResult(
-                cameraBodies = cameraBodies,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to search camera bodies by name: ${query.searchTerm}" }
-            SearchCameraBodiesByNameQueryResult(
-                cameraBodies = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = cameraBodyRepository.searchByNameAsync(query.searchTerm)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} camera bodies for search term: ${query.searchTerm}" }
+                SearchCameraBodiesByNameQueryResult(
+                    cameraBodies = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to search camera bodies by name: ${query.searchTerm} - ${result.error}" }
+                SearchCameraBodiesByNameQueryResult(
+                    cameraBodies = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

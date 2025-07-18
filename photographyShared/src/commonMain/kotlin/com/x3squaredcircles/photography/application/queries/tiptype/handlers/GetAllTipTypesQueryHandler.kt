@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tiptype.GetAllTipTyp
 import com.x3squaredcircles.photography.application.queries.tiptype.GetAllTipTypesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipTypeRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllTipTypesQueryHandler(
@@ -13,24 +14,24 @@ class GetAllTipTypesQueryHandler(
 ) : IQueryHandler<GetAllTipTypesQuery, GetAllTipTypesQueryResult> {
 
     override suspend fun handle(query: GetAllTipTypesQuery): GetAllTipTypesQueryResult {
-        return try {
-            logger.d { "Handling GetAllTipTypesQuery" }
+        logger.d { "Handling GetAllTipTypesQuery" }
 
-            val tipTypes = tipTypeRepository.getAllAsync()
-
-            logger.i { "Retrieved ${tipTypes.size} tip types" }
-
-            GetAllTipTypesQueryResult(
-                tipTypes = tipTypes,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all tip types" }
-            GetAllTipTypesQueryResult(
-                tipTypes = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipTypeRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} tip types" }
+                GetAllTipTypesQueryResult(
+                    tipTypes = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all tip types: ${result.error}" }
+                GetAllTipTypesQueryResult(
+                    tipTypes = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

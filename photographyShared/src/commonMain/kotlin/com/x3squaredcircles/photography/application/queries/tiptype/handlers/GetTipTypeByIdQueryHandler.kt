@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypeBy
 import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypeByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipTypeRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetTipTypeByIdQueryHandler(
@@ -13,24 +14,24 @@ class GetTipTypeByIdQueryHandler(
 ) : IQueryHandler<GetTipTypeByIdQuery, GetTipTypeByIdQueryResult> {
 
     override suspend fun handle(query: GetTipTypeByIdQuery): GetTipTypeByIdQueryResult {
-        return try {
-            logger.d { "Handling GetTipTypeByIdQuery with id: ${query.id}" }
+        logger.d { "Handling GetTipTypeByIdQuery with id: ${query.id}" }
 
-            val tipType = tipTypeRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved tip type with id: ${query.id}, found: ${tipType != null}" }
-
-            GetTipTypeByIdQueryResult(
-                tipType = tipType,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get tip type by id: ${query.id}" }
-            GetTipTypeByIdQueryResult(
-                tipType = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipTypeRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved tip type with id: ${query.id}, found: ${result.data != null}" }
+                GetTipTypeByIdQueryResult(
+                    tipType = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get tip type by id: ${query.id} - ${result.error}" }
+                GetTipTypeByIdQueryResult(
+                    tipType = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

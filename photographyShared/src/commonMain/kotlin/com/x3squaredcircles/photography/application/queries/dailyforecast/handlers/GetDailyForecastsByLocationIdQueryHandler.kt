@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.dailyforecast.GetDai
 import com.x3squaredcircles.photography.application.queries.dailyforecast.GetDailyForecastsByLocationIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IDailyForecastRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetDailyForecastsByLocationIdQueryHandler(
@@ -13,24 +14,24 @@ class GetDailyForecastsByLocationIdQueryHandler(
 ) : IQueryHandler<GetDailyForecastsByLocationIdQuery, GetDailyForecastsByLocationIdQueryResult> {
 
     override suspend fun handle(query: GetDailyForecastsByLocationIdQuery): GetDailyForecastsByLocationIdQueryResult {
-        return try {
-            logger.d { "Handling GetDailyForecastsByLocationIdQuery with locationId: ${query.locationId}" }
+        logger.d { "Handling GetDailyForecastsByLocationIdQuery with locationId: ${query.locationId}" }
 
-            val dailyForecasts = dailyForecastRepository.getByLocationIdAsync(query.locationId)
-
-            logger.i { "Retrieved ${dailyForecasts.size} daily forecasts for locationId: ${query.locationId}" }
-
-            GetDailyForecastsByLocationIdQueryResult(
-                dailyForecasts = dailyForecasts,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get daily forecasts by location id: ${query.locationId}" }
-            GetDailyForecastsByLocationIdQueryResult(
-                dailyForecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = dailyForecastRepository.getByLocationIdAsync(query.locationId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} daily forecasts for locationId: ${query.locationId}" }
+                GetDailyForecastsByLocationIdQueryResult(
+                    dailyForecasts = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get daily forecasts by location id: ${query.locationId} - ${result.error}" }
+                GetDailyForecastsByLocationIdQueryResult(
+                    dailyForecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

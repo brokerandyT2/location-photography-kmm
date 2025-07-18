@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.camerabody.GetCamera
 import com.x3squaredcircles.photography.application.queries.camerabody.GetCameraBodyByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetCameraBodyByIdQueryHandler(
@@ -13,24 +14,24 @@ class GetCameraBodyByIdQueryHandler(
 ) : IQueryHandler<GetCameraBodyByIdQuery, GetCameraBodyByIdQueryResult> {
 
     override suspend fun handle(query: GetCameraBodyByIdQuery): GetCameraBodyByIdQueryResult {
-        return try {
-            logger.d { "Handling GetCameraBodyByIdQuery with id: ${query.id}" }
+        logger.d { "Handling GetCameraBodyByIdQuery with id: ${query.id}" }
 
-            val cameraBody = cameraBodyRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved camera body with id: ${query.id}, found: ${cameraBody != null}" }
-
-            GetCameraBodyByIdQueryResult(
-                cameraBody = cameraBody,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get camera body by id: ${query.id}" }
-            GetCameraBodyByIdQueryResult(
-                cameraBody = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = cameraBodyRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved camera body with id: ${query.id}, found: ${result.data != null}" }
+                GetCameraBodyByIdQueryResult(
+                    cameraBody = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get camera body by id: ${query.id} - ${result.error}" }
+                GetCameraBodyByIdQueryResult(
+                    cameraBody = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lenscameracompatibil
 import com.x3squaredcircles.photography.application.queries.lenscameracompatibility.GetLensCameraCompatibilityByCameraIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensCameraCompatibilityRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetLensCameraCompatibilityByCameraIdQueryHandler(
@@ -13,24 +14,24 @@ class GetLensCameraCompatibilityByCameraIdQueryHandler(
 ) : IQueryHandler<GetLensCameraCompatibilityByCameraIdQuery, GetLensCameraCompatibilityByCameraIdQueryResult> {
 
     override suspend fun handle(query: GetLensCameraCompatibilityByCameraIdQuery): GetLensCameraCompatibilityByCameraIdQueryResult {
-        return try {
-            logger.d { "Handling GetLensCameraCompatibilityByCameraIdQuery with cameraBodyId: ${query.cameraBodyId}" }
+        logger.d { "Handling GetLensCameraCompatibilityByCameraIdQuery with cameraBodyId: ${query.cameraBodyId}" }
 
-            val compatibilities = lensCameraCompatibilityRepository.getByCameraIdAsync(query.cameraBodyId)
-
-            logger.i { "Retrieved ${compatibilities.size} lens camera compatibilities for cameraBodyId: ${query.cameraBodyId}" }
-
-            GetLensCameraCompatibilityByCameraIdQueryResult(
-                compatibilities = compatibilities,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get lens camera compatibilities by camera id: ${query.cameraBodyId}" }
-            GetLensCameraCompatibilityByCameraIdQueryResult(
-                compatibilities = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensCameraCompatibilityRepository.getByCameraIdAsync(query.cameraBodyId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} lens camera compatibilities for cameraBodyId: ${query.cameraBodyId}" }
+                GetLensCameraCompatibilityByCameraIdQueryResult(
+                    compatibilities = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get lens camera compatibilities by camera id: ${query.cameraBodyId} - ${result.error}" }
+                GetLensCameraCompatibilityByCameraIdQueryResult(
+                    compatibilities = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

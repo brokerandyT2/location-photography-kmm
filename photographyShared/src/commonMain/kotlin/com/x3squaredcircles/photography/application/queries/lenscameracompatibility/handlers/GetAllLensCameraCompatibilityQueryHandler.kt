@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lenscameracompatibil
 import com.x3squaredcircles.photography.application.queries.lenscameracompatibility.GetAllLensCameraCompatibilityQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensCameraCompatibilityRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllLensCameraCompatibilityQueryHandler(
@@ -13,24 +14,24 @@ class GetAllLensCameraCompatibilityQueryHandler(
 ) : IQueryHandler<GetAllLensCameraCompatibilityQuery, GetAllLensCameraCompatibilityQueryResult> {
 
     override suspend fun handle(query: GetAllLensCameraCompatibilityQuery): GetAllLensCameraCompatibilityQueryResult {
-        return try {
-            logger.d { "Handling GetAllLensCameraCompatibilityQuery" }
+        logger.d { "Handling GetAllLensCameraCompatibilityQuery" }
 
-            val compatibilities = lensCameraCompatibilityRepository.getAllAsync()
-
-            logger.i { "Retrieved ${compatibilities.size} lens camera compatibilities" }
-
-            GetAllLensCameraCompatibilityQueryResult(
-                compatibilities = compatibilities,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all lens camera compatibilities" }
-            GetAllLensCameraCompatibilityQueryResult(
-                compatibilities = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensCameraCompatibilityRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} lens camera compatibilities" }
+                GetAllLensCameraCompatibilityQueryResult(
+                    compatibilities = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all lens camera compatibilities: ${result.error}" }
+                GetAllLensCameraCompatibilityQueryResult(
+                    compatibilities = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

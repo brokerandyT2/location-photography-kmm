@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lens.GetLensByIdQuer
 import com.x3squaredcircles.photography.application.queries.lens.GetLensByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetLensByIdQueryHandler(
@@ -13,24 +14,24 @@ class GetLensByIdQueryHandler(
 ) : IQueryHandler<GetLensByIdQuery, GetLensByIdQueryResult> {
 
     override suspend fun handle(query: GetLensByIdQuery): GetLensByIdQueryResult {
-        return try {
-            logger.d { "Handling GetLensByIdQuery with id: ${query.id}" }
+        logger.d { "Handling GetLensByIdQuery with id: ${query.id}" }
 
-            val lens = lensRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved lens with id: ${query.id}, found: ${lens != null}" }
-
-            GetLensByIdQueryResult(
-                lens = lens,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get lens by id: ${query.id}" }
-            GetLensByIdQueryResult(
-                lens = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved lens with id: ${query.id}, found: ${result.data != null}" }
+                GetLensByIdQueryResult(
+                    lens = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get lens by id: ${query.id} - ${result.error}" }
+                GetLensByIdQueryResult(
+                    lens = null,
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

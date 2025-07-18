@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tip.GetTipsWithCamer
 import com.x3squaredcircles.photography.application.queries.tip.GetTipsWithCameraSettingsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetTipsWithCameraSettingsQueryHandler(
@@ -13,24 +14,24 @@ class GetTipsWithCameraSettingsQueryHandler(
 ) : IQueryHandler<GetTipsWithCameraSettingsQuery, GetTipsWithCameraSettingsQueryResult> {
 
     override suspend fun handle(query: GetTipsWithCameraSettingsQuery): GetTipsWithCameraSettingsQueryResult {
-        return try {
-            logger.d { "Handling GetTipsWithCameraSettingsQuery" }
+        logger.d { "Handling GetTipsWithCameraSettingsQuery" }
 
-            val tips = tipRepository.getWithCameraSettingsAsync()
-
-            logger.i { "Retrieved ${tips.size} tips with camera settings" }
-
-            GetTipsWithCameraSettingsQueryResult(
-                tips = tips,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get tips with camera settings" }
-            GetTipsWithCameraSettingsQueryResult(
-                tips = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipRepository.getWithCameraSettingsAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} tips with camera settings" }
+                GetTipsWithCameraSettingsQueryResult(
+                    tips = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get tips with camera settings: ${result.error}" }
+                GetTipsWithCameraSettingsQueryResult(
+                    tips = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

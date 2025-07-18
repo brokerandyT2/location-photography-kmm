@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.camerabody.GetAllCam
 import com.x3squaredcircles.photography.application.queries.camerabody.GetAllCameraBodiesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllCameraBodiesQueryHandler(
@@ -13,24 +14,24 @@ class GetAllCameraBodiesQueryHandler(
 ) : IQueryHandler<GetAllCameraBodiesQuery, GetAllCameraBodiesQueryResult> {
 
     override suspend fun handle(query: GetAllCameraBodiesQuery): GetAllCameraBodiesQueryResult {
-        return try {
-            logger.d { "Handling GetAllCameraBodiesQuery" }
+        logger.d { "Handling GetAllCameraBodiesQuery" }
 
-            val cameraBodies = cameraBodyRepository.getAllAsync()
-
-            logger.i { "Retrieved ${cameraBodies.size} camera bodies" }
-
-            GetAllCameraBodiesQueryResult(
-                cameraBodies = cameraBodies,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all camera bodies" }
-            GetAllCameraBodiesQueryResult(
-                cameraBodies = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = cameraBodyRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} camera bodies" }
+                GetAllCameraBodiesQueryResult(
+                    cameraBodies = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all camera bodies: ${result.error}" }
+                GetAllCameraBodiesQueryResult(
+                    cameraBodies = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

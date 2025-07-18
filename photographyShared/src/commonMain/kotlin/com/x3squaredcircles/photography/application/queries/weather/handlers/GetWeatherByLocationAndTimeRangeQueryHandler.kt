@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.weather.GetWeatherBy
 import com.x3squaredcircles.photography.application.queries.weather.GetWeatherByLocationAndTimeRangeQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetWeatherByLocationAndTimeRangeQueryHandler(
@@ -13,28 +14,28 @@ class GetWeatherByLocationAndTimeRangeQueryHandler(
 ) : IQueryHandler<GetWeatherByLocationAndTimeRangeQuery, GetWeatherByLocationAndTimeRangeQueryResult> {
 
     override suspend fun handle(query: GetWeatherByLocationAndTimeRangeQuery): GetWeatherByLocationAndTimeRangeQueryResult {
-        return try {
-            logger.d { "Handling GetWeatherByLocationAndTimeRangeQuery with locationId: ${query.locationId}, startTime: ${query.startTime}, endTime: ${query.endTime}" }
+        logger.d { "Handling GetWeatherByLocationAndTimeRangeQuery with locationId: ${query.locationId}, startTime: ${query.startTime}, endTime: ${query.endTime}" }
 
-            val weather = weatherRepository.getByLocationAndTimeRangeAsync(
-                locationId = query.locationId,
-                startTime = query.startTime,
-                endTime = query.endTime
-            )
-
-            logger.i { "Retrieved ${weather.size} weather records for location ${query.locationId} in time range" }
-
-            GetWeatherByLocationAndTimeRangeQueryResult(
-                weather = weather,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get weather by location and time range" }
-            GetWeatherByLocationAndTimeRangeQueryResult(
-                weather = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = weatherRepository.getByLocationAndTimeRangeAsync(
+            locationId = query.locationId,
+            startTime = query.startTime,
+            endTime = query.endTime
+        )) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} weather records for location ${query.locationId} in time range" }
+                GetWeatherByLocationAndTimeRangeQueryResult(
+                    weather = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get weather by location and time range: ${result.error}" }
+                GetWeatherByLocationAndTimeRangeQueryResult(
+                    weather = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

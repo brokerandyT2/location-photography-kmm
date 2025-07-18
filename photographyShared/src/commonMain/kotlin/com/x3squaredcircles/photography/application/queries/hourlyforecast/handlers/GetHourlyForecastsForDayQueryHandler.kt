@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.hourlyforecast.GetHo
 import com.x3squaredcircles.photography.application.queries.hourlyforecast.GetHourlyForecastsForDayQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IHourlyForecastRepository
+import com.x3squaredcircles.core.domain.common.Result
 import kotlinx.datetime.Instant
 import co.touchlab.kermit.Logger
 
@@ -14,25 +15,35 @@ class GetHourlyForecastsForDayQueryHandler(
 ) : IQueryHandler<GetHourlyForecastsForDayQuery, GetHourlyForecastsForDayQueryResult> {
 
     override suspend fun handle(query: GetHourlyForecastsForDayQuery): GetHourlyForecastsForDayQueryResult {
-        return try {
-            logger.d { "Handling GetHourlyForecastsForDayQuery with weatherId: ${query.weatherId}, startTime: ${query.startTime}, endTime: ${query.endTime}" }
+        logger.d { "Handling GetHourlyForecastsForDayQuery with weatherId: ${query.weatherId}, startTime: ${query.startTime}, endTime: ${query.endTime}" }
 
+        return try {
             val startTime = Instant.fromEpochMilliseconds(query.startTime)
             val endTime = Instant.fromEpochMilliseconds(query.endTime)
-            val hourlyForecasts = hourlyForecastRepository.getByWeatherAndTimeRangeAsync(query.weatherId, startTime, endTime)
 
-            logger.i { "Retrieved ${hourlyForecasts.size} hourly forecasts for day - weatherId: ${query.weatherId}" }
-
-            GetHourlyForecastsForDayQueryResult(
-                hourlyForecasts = hourlyForecasts,
-                isSuccess = true
-            )
+            when (val result = hourlyForecastRepository.getByWeatherAndTimeRangeAsync(query.weatherId, startTime, endTime)) {
+                is Result.Success -> {
+                    logger.i { "Retrieved ${result.data.size} hourly forecasts for day - weatherId: ${query.weatherId}" }
+                    GetHourlyForecastsForDayQueryResult(
+                        hourlyForecasts = result.data,
+                        isSuccess = true
+                    )
+                }
+                is Result.Failure -> {
+                    logger.e { "Failed to get hourly forecasts for day - weatherId: ${query.weatherId} - ${result.error}" }
+                    GetHourlyForecastsForDayQueryResult(
+                        hourlyForecasts = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                }
+            }
         } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get hourly forecasts for day - weatherId: ${query.weatherId}" }
+            logger.e(ex) { "Failed to create times or get hourly forecasts for day - weatherId: ${query.weatherId}" }
             GetHourlyForecastsForDayQueryResult(
                 hourlyForecasts = emptyList(),
                 isSuccess = false,
-                errorMessage = ex.message
+                errorMessage = ex.message ?: "Unknown error occurred"
             )
         }
     }

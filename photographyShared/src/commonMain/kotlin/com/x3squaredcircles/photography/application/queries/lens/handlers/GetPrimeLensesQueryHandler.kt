@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.lens.GetPrimeLensesQ
 import com.x3squaredcircles.photography.application.queries.lens.GetPrimeLensesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetPrimeLensesQueryHandler(
@@ -13,24 +14,24 @@ class GetPrimeLensesQueryHandler(
 ) : IQueryHandler<GetPrimeLensesQuery, GetPrimeLensesQueryResult> {
 
     override suspend fun handle(query: GetPrimeLensesQuery): GetPrimeLensesQueryResult {
-        return try {
-            logger.d { "Handling GetPrimeLensesQuery" }
+        logger.d { "Handling GetPrimeLensesQuery" }
 
-            val lenses = lensRepository.getPrimeLensesAsync()
-
-            logger.i { "Retrieved ${lenses.size} prime lenses" }
-
-            GetPrimeLensesQueryResult(
-                lenses = lenses,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get prime lenses" }
-            GetPrimeLensesQueryResult(
-                lenses = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = lensRepository.getPrimeLensesAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} prime lenses" }
+                GetPrimeLensesQueryResult(
+                    lenses = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get prime lenses: ${result.error}" }
+                GetPrimeLensesQueryResult(
+                    lenses = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

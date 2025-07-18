@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.GetLocation
 import com.x3squaredcircles.photography.application.queries.location.GetLocationsByBoundsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetLocationsByBoundsQueryHandler(
@@ -13,29 +14,29 @@ class GetLocationsByBoundsQueryHandler(
 ) : IQueryHandler<GetLocationsByBoundsQuery, GetLocationsByBoundsQueryResult> {
 
     override suspend fun handle(query: GetLocationsByBoundsQuery): GetLocationsByBoundsQueryResult {
-        return try {
-            logger.d { "Handling GetLocationsByBoundsQuery - bounds: (${query.southLatitude}, ${query.westLongitude}) to (${query.northLatitude}, ${query.eastLongitude})" }
+        logger.d { "Handling GetLocationsByBoundsQuery - bounds: (${query.southLatitude}, ${query.westLongitude}) to (${query.northLatitude}, ${query.eastLongitude})" }
 
-            val locations = locationRepository.getByBoundsAsync(
-                southLat = query.southLatitude,
-                northLat = query.northLatitude,
-                westLon = query.westLongitude,
-                eastLon = query.eastLongitude
-            )
-
-            logger.i { "Retrieved ${locations.size} locations within bounds" }
-
-            GetLocationsByBoundsQueryResult(
-                locations = locations,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get locations by bounds" }
-            GetLocationsByBoundsQueryResult(
-                locations = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.getByBoundsAsync(
+            southLat = query.southLatitude,
+            northLat = query.northLatitude,
+            westLon = query.westLongitude,
+            eastLon = query.eastLongitude
+        )) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} locations within bounds" }
+                GetLocationsByBoundsQueryResult(
+                    locations = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get locations by bounds: ${result.error}" }
+                GetLocationsByBoundsQueryResult(
+                    locations = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

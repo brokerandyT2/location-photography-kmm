@@ -9,8 +9,8 @@ import com.x3squaredcircles.photography.domain.models.GenericEquipmentRecommenda
 import com.x3squaredcircles.photography.domain.models.HourlyEquipmentRecommendation
 import com.x3squaredcircles.photography.domain.models.CameraLensCombination
 import com.x3squaredcircles.photography.domain.models.OptimalEquipmentSpecs
-import com.x3squaredcircles.photography.domain.models.CameraBodyDto
-import com.x3squaredcircles.photography.domain.models.LensDto
+import com.x3squaredcircles.photography.application.queries.camerabody.CameraBodyDto
+import com.x3squaredcircles.photography.application.queries.lens.LensDto
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensRepository
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILensCameraCompatibilityRepository
@@ -39,41 +39,58 @@ class EquipmentRecommendationService(
                 val userLensesResult = lensRepository.getUserCreatedAsync()
 
                 when {
-                    userCamerasResult.isFailure -> return@withContext Result.failure("Failed to load user cameras: ${userCamerasResult.error}")
-                    userLensesResult.isFailure -> return@withContext Result.failure("Failed to load user lenses: ${userLensesResult.error}")
+                    userCamerasResult.isFailure -> return@withContext Result.failure("Failed to load user cameras: ${(userCamerasResult as Result.Failure).error}")
+                    userLensesResult.isFailure -> return@withContext Result.failure("Failed to load user lenses: ${(userLensesResult as Result.Failure).error}")
                 }
 
-                val userCameras = userCamerasResult.
-                val userLenses = userLensesResult
+                val userCameras = (userCamerasResult as Result.Success).data
+                val userLenses = (userLensesResult as Result.Success).data
 
-                val matchingLenses = findMatchingLenses(userLenses, specs)
+                if (userCameras.isEmpty() && userLenses.isEmpty()) {
+                    return@withContext Result.success(
+                        UserEquipmentRecommendation(
+                            target = target,
+                            specs = specs,
+                            hasUserEquipment = false,
+                            summary = "No user equipment found. Consider getting equipment that meets the recommended specifications."
+                        )
+                    )
+                }
+
                 val combinations = mutableListOf<CameraLensCombination>()
 
-                for (lens in matchingLenses) {
-                    val compatibleCameras = getCompatibleUserCameras(lens, userCameras)
+                for (lens in userLenses) {
+                    if (isLensCompatibleWithTarget(lens, specs)) {
+                        val compatibleCameras = getCompatibleUserCameras(lens, userCameras)
 
-                    for (camera in compatibleCameras) {
-                        val combination = createCameraLensCombination(camera, lens, specs)
-                        combinations.add(combination)
+                        for (camera in compatibleCameras) {
+                            val combination = createCameraLensCombination(camera, lens, specs)
+                            combinations.add(combination)
+                        }
                     }
                 }
 
-                val orderedCombinations = combinations.sortedByDescending { it.matchScore }
+                combinations.sortByDescending { it.matchScore }
 
-                val recommendation = UserEquipmentRecommendation(
-                    target = target,
-                    specs = specs,
-                    hasUserEquipment = userCameras.isNotEmpty() && userLenses.isNotEmpty(),
-                    recommendedCombinations = orderedCombinations.filter { it.matchScore >= 70 },
-                    alternativeCombinations = orderedCombinations.filter { it.matchScore in 40.0..69.9 },
-                    hasOptimalEquipment = orderedCombinations.any { it.isOptimal },
-                    summary = generateRecommendationSummary(orderedCombinations, specs, target)
+                val hasOptimal = combinations.any { it.isOptimal }
+                val recommended = combinations.take(3)
+                val alternatives = combinations.drop(3)
+
+                Result.success(
+                    UserEquipmentRecommendation(
+                        target = target,
+                        specs = specs,
+                        hasUserEquipment = true,
+                        recommendedCombinations = recommended,
+                        alternativeCombinations = alternatives,
+                        hasOptimalEquipment = hasOptimal,
+                        summary = generateRecommendationSummary(combinations, specs, target)
+                    )
                 )
 
-                Result.success(recommendation)
             } catch (ex: Exception) {
-                logger.e(ex) { "Error getting user equipment recommendation for $target" }
-                Result.failure("Error getting user equipment recommendation: ${ex.message}", ex)
+                logger.e(ex) { "Failed to get user equipment recommendation" }
+                Result.failure("Failed to analyze user equipment: ${ex.message}")
             }
         }
     }
@@ -85,186 +102,152 @@ class EquipmentRecommendationService(
         return withContext(Dispatchers.Default) {
             try {
                 val userRecommendationResult = getUserEquipmentRecommendationAsync(target)
-                val genericRecommendationResult = getGenericRecommendationAsync(target)
 
-                val hourlyRecommendations = mutableListOf<HourlyEquipmentRecommendation>()
+                when (userRecommendationResult) {
+                    is Result.Failure -> return@withContext Result.failure(userRecommendationResult.error)
+                    is Result.Success -> {
+                        val userRecommendation = userRecommendationResult.data
+                        val hourlyRecommendations = predictionTimes.map { time ->
+                            HourlyEquipmentRecommendation(
+                                predictionTime = time,
+                                target = target,
+                                hasUserEquipment = userRecommendation.hasUserEquipment,
+                                bestCombination = userRecommendation.recommendedCombinations.firstOrNull(),
+                                alternativeCombinations = userRecommendation.alternativeCombinations.take(2),
+                                weatherAdjustments = "Check weather conditions for optimal settings",
+                                settingsRecommendation = userRecommendation.specs.recommendedSettings,
+                                notes = if (userRecommendation.hasOptimalEquipment) "Your equipment is excellent for this target" else "Consider equipment upgrades for better results"
+                            )
+                        }
 
-                for (time in predictionTimes) {
-                    val hasUserEquipment = when (userRecommendationResult) {
-                        is Result.Success -> userRecommendationResult.data.recommendedCombinations.isNotEmpty()
-                        is Result.Failure -> false
+                        Result.success(hourlyRecommendations)
                     }
-
-                    val recommendation = when {
-                        hasUserEquipment && userRecommendationResult is Result.Success -> {
-                            val bestCombination = userRecommendationResult.data.recommendedCombinations.firstOrNull()
-                            HourlyEquipmentRecommendation(
-                                predictionTime = time,
-                                target = target,
-                                hasUserEquipment = true,
-                                bestCombination = bestCombination,
-                                alternativeCombinations = userRecommendationResult.data.alternativeCombinations,
-                                weatherAdjustments = "Standard weather conditions expected",
-                                settingsRecommendation = bestCombination?.detailedRecommendation ?: "",
-                                notes = bestCombination?.recommendationReason ?: ""
-                            )
-                        }
-                        genericRecommendationResult is Result.Success -> {
-                            HourlyEquipmentRecommendation(
-                                predictionTime = time,
-                                target = target,
-                                hasUserEquipment = false,
-                                bestCombination = null,
-                                alternativeCombinations = emptyList(),
-                                weatherAdjustments = "Standard weather conditions expected",
-                                settingsRecommendation = genericRecommendationResult.data.lensRecommendation,
-                                notes = "Generic equipment recommendation"
-                            )
-                        }
-                        else -> {
-                            HourlyEquipmentRecommendation(
-                                predictionTime = time,
-                                target = target,
-                                hasUserEquipment = false,
-                                bestCombination = null,
-                                alternativeCombinations = emptyList(),
-                                weatherAdjustments = "",
-                                settingsRecommendation = "",
-                                notes = "No recommendations available"
-                            )
-                        }
-                    }
-
-                    hourlyRecommendations.add(recommendation)
                 }
-
-                Result.success(hourlyRecommendations)
             } catch (ex: Exception) {
-                logger.e(ex) { "Error getting hourly equipment recommendations" }
-                Result.failure("Error getting hourly equipment recommendations: ${ex.message}", ex)
+                logger.e(ex) { "Failed to get hourly equipment recommendations" }
+                Result.failure("Failed to generate hourly recommendations: ${ex.message}")
             }
         }
     }
 
-    override suspend fun getGenericRecommendationAsync(
-        target: AstroTarget
-    ): Result<GenericEquipmentRecommendation> {
+    override suspend fun getGenericRecommendationAsync(target: AstroTarget): Result<GenericEquipmentRecommendation> {
         return withContext(Dispatchers.Default) {
             try {
                 val specs = getOptimalEquipmentSpecs(target)
 
-                val recommendation = GenericEquipmentRecommendation(
-                    target = target,
-                    specs = specs,
-                    lensRecommendation = generateGenericLensRecommendation(specs),
-                    cameraRecommendation = generateGenericCameraRecommendation(specs),
-                    shoppingList = generateShoppingList(specs, target)
+                Result.success(
+                    GenericEquipmentRecommendation(
+                        target = target,
+                        specs = specs,
+                        lensRecommendation = generateGenericLensRecommendation(specs),
+                        cameraRecommendation = generateGenericCameraRecommendation(specs),
+                        shoppingList = generateShoppingList(specs, target)
+                    )
                 )
-
-                Result.success(recommendation)
             } catch (ex: Exception) {
-                logger.e(ex) { "Error generating generic recommendation for $target" }
-                Result.failure("Error generating generic recommendation: ${ex.message}", ex)
+                logger.e(ex) { "Failed to get generic recommendation" }
+                Result.failure("Failed to generate generic recommendation: ${ex.message}")
             }
         }
     }
 
     private fun getOptimalEquipmentSpecs(target: AstroTarget): OptimalEquipmentSpecs {
         return when (target) {
-            AstroTarget.DEEP_SKY_OBJECTS -> OptimalEquipmentSpecs(
-                minFocalLength = 50.0,
-                maxFocalLength = 300.0,
-                optimalFocalLength = 135.0,
+            AstroTarget.MOON -> OptimalEquipmentSpecs(
+                minFocalLength = 200.0,
+                maxFocalLength = 2000.0,
+                optimalFocalLength = 600.0,
+                maxAperture = 8.0,
+                minIsoCapability = 100,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 100-400, f/8-f/11, 1/60s-1/250s",
+                notes = "Moon photography benefits from longer focal lengths and stopped-down apertures for sharpness."
+            )
+            AstroTarget.PLANETS -> OptimalEquipmentSpecs(
+                minFocalLength = 500.0,
+                maxFocalLength = 3000.0,
+                optimalFocalLength = 1200.0,
+                maxAperture = 10.0,
+                minIsoCapability = 400,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 800-1600, f/8-f/10, 1/30s-1/125s",
+                notes = "Planetary photography requires very long focal lengths and high magnification."
+            )
+            AstroTarget.MILKY_WAY_CORE, AstroTarget.MILKY_WAY -> OptimalEquipmentSpecs(
+                minFocalLength = 14.0,
+                maxFocalLength = 35.0,
+                optimalFocalLength = 24.0,
+                maxAperture = 2.8,
+                minIsoCapability = 1600,
+                maxIsoCapability = 12800,
+                recommendedSettings = "ISO 3200-6400, f/1.4-f/2.8, 15s-25s",
+                notes = "Milky Way photography requires wide angles and fast apertures for light gathering."
+            )
+            AstroTarget.DEEP_SKY_OBJECTS, AstroTarget.DEEP_SKY -> OptimalEquipmentSpecs(
+                minFocalLength = 85.0,
+                maxFocalLength = 600.0,
+                optimalFocalLength = 200.0,
                 maxAperture = 4.0,
                 minIsoCapability = 800,
                 maxIsoCapability = 6400,
-                recommendedSettings = "ISO 1600, f/4, 60-120 seconds",
-                notes = "Deep sky objects require long focal lengths for detail",
-                tracking = true,
-                tripod = true
+                recommendedSettings = "ISO 1600-3200, f/2.8-f/4, 30s-300s with tracking",
+                notes = "Deep sky objects benefit from moderate telephoto lenses and tracking mounts.",
+                tracking = true
             )
-            AstroTarget.MILKY_WAY_CORE -> OptimalEquipmentSpecs(
+            AstroTarget.STAR_TRAILS -> OptimalEquipmentSpecs(
+                minFocalLength = 14.0,
+                maxFocalLength = 50.0,
+                optimalFocalLength = 28.0,
+                maxAperture = 5.6,
+                minIsoCapability = 200,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 400-800, f/4-f/5.6, 15min-4hr total exposure",
+                notes = "Star trails work well with wide to normal lenses and lower ISO for cleaner images."
+            )
+            AstroTarget.METEOR_SHOWERS -> OptimalEquipmentSpecs(
                 minFocalLength = 14.0,
                 maxFocalLength = 35.0,
                 optimalFocalLength = 24.0,
                 maxAperture = 2.8,
                 minIsoCapability = 1600,
                 maxIsoCapability = 6400,
-                recommendedSettings = "ISO 3200, f/2.8, 15-30 seconds",
-                notes = "Wide angle lenses capture the full arc of the Milky Way",
-                tracking = false,
-                tripod = true
+                recommendedSettings = "ISO 3200-6400, f/2.8-f/4, 15s-30s",
+                notes = "Meteor photography requires wide coverage and fast settings to capture brief events."
             )
-            AstroTarget.PLANETS -> OptimalEquipmentSpecs(
-                minFocalLength = 300.0,
-                maxFocalLength = 1000.0,
-                optimalFocalLength = 600.0,
-                maxAperture = 6.3,
-                minIsoCapability = 800,
-                maxIsoCapability = 3200,
-                recommendedSettings = "ISO 800, f/8, 1/60 - 1/250 second",
-                notes = "Long telephoto lenses reveal planetary details",
-                tracking = false,
-                tripod = true
-            )
-            AstroTarget.MOON -> OptimalEquipmentSpecs(
+            AstroTarget.SOLAR_ECLIPSE -> OptimalEquipmentSpecs(
                 minFocalLength = 200.0,
-                maxFocalLength = 800.0,
+                maxFocalLength = 1000.0,
                 optimalFocalLength = 400.0,
                 maxAperture = 8.0,
                 minIsoCapability = 100,
-                maxIsoCapability = 800,
-                recommendedSettings = "ISO 200, f/8, 1/125 - 1/500 second",
-                notes = "Medium telephoto captures lunar surface details",
-                tracking = false,
-                tripod = true
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 100-1600, f/8-f/11, 1/1000s-2s (requires solar filter)",
+                notes = "Solar eclipse photography requires telephoto lenses and proper solar filtration for safety."
             )
-            AstroTarget.STAR_TRAILS -> OptimalEquipmentSpecs(
-                minFocalLength = 14.0,
-                maxFocalLength = 50.0,
-                optimalFocalLength = 24.0,
-                maxAperture = 4.0,
-                minIsoCapability = 100,
-                maxIsoCapability = 800,
-                recommendedSettings = "ISO 400, f/4, 30 minutes - 2 hours",
-                notes = "Wide angles capture circular star trail patterns",
-                tracking = false,
-                tripod = true
+            AstroTarget.LUNAR_ECLIPSE -> OptimalEquipmentSpecs(
+                minFocalLength = 200.0,
+                maxFocalLength = 800.0,
+                optimalFocalLength = 400.0,
+                maxAperture = 5.6,
+                minIsoCapability = 400,
+                maxIsoCapability = 6400,
+                recommendedSettings = "ISO 800-3200, f/4-f/8, 1s-15s",
+                notes = "Lunar eclipses require moderate telephoto lenses and adaptable settings for changing light."
             )
             AstroTarget.CONJUNCTIONS -> OptimalEquipmentSpecs(
                 minFocalLength = 85.0,
-                maxFocalLength = 300.0,
+                maxFocalLength = 400.0,
                 optimalFocalLength = 200.0,
                 maxAperture = 4.0,
                 minIsoCapability = 800,
                 maxIsoCapability = 3200,
-                recommendedSettings = "ISO 800, f/4, 1-10 seconds",
-                notes = "Medium telephoto balances field of view with detail",
-                tracking = false,
-                tripod = true
-            )
-            else -> OptimalEquipmentSpecs(
-                minFocalLength = 24.0,
-                maxFocalLength = 70.0,
-                optimalFocalLength = 50.0,
-                maxAperture = 2.8,
-                minIsoCapability = 800,
-                maxIsoCapability = 3200,
-                recommendedSettings = "ISO 1600, f/2.8, 15-30 seconds",
-                notes = "General astrophotography setup",
-                tracking = false,
-                tripod = true
+                recommendedSettings = "ISO 1600-3200, f/2.8-f/5.6, 1s-30s",
+                notes = "Planetary conjunctions benefit from moderate telephoto lenses to show both objects clearly."
             )
         }
     }
 
-    private fun findMatchingLenses(userLenses: List<LensDto>, specs: OptimalEquipmentSpecs): List<LensDto> {
-        return userLenses.filter { lens ->
-            isLensMatchingSpecs(lens, specs)
-        }
-    }
-
-    private fun isLensMatchingSpecs(lens: LensDto, specs: OptimalEquipmentSpecs): Boolean {
+    private fun isLensCompatibleWithTarget(lens: LensDto, specs: OptimalEquipmentSpecs): Boolean {
         val focalLengthMatch = if (lens.isPrime) {
             lens.minMM >= specs.minFocalLength && lens.minMM <= specs.maxFocalLength
         } else {

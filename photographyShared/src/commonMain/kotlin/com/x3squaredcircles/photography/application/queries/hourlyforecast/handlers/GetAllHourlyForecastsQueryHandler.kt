@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.hourlyforecast.GetAl
 import com.x3squaredcircles.photography.application.queries.hourlyforecast.GetAllHourlyForecastsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IHourlyForecastRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllHourlyForecastsQueryHandler(
@@ -13,24 +14,24 @@ class GetAllHourlyForecastsQueryHandler(
 ) : IQueryHandler<GetAllHourlyForecastsQuery, GetAllHourlyForecastsQueryResult> {
 
     override suspend fun handle(query: GetAllHourlyForecastsQuery): GetAllHourlyForecastsQueryResult {
-        return try {
-            logger.d { "Handling GetAllHourlyForecastsQuery" }
+        logger.d { "Handling GetAllHourlyForecastsQuery" }
 
-            val hourlyForecasts = hourlyForecastRepository.getAllAsync()
-
-            logger.i { "Retrieved ${hourlyForecasts.size} hourly forecasts" }
-
-            GetAllHourlyForecastsQueryResult(
-                hourlyForecasts = hourlyForecasts,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all hourly forecasts" }
-            GetAllHourlyForecastsQueryResult(
-                hourlyForecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = hourlyForecastRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} hourly forecasts" }
+                GetAllHourlyForecastsQueryResult(
+                    hourlyForecasts = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all hourly forecasts: ${result.error}" }
+                GetAllHourlyForecastsQueryResult(
+                    hourlyForecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

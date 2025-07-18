@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.SearchLocat
 import com.x3squaredcircles.photography.application.queries.location.SearchLocationsByTextQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class SearchLocationsByTextQueryHandler(
@@ -13,27 +14,27 @@ class SearchLocationsByTextQueryHandler(
 ) : IQueryHandler<SearchLocationsByTextQuery, SearchLocationsByTextQueryResult> {
 
     override suspend fun handle(query: SearchLocationsByTextQuery): SearchLocationsByTextQueryResult {
-        return try {
-            logger.d { "Handling SearchLocationsByTextQuery with searchTerm: ${query.searchTerm}, includeDeleted: ${query.includeDeleted}" }
+        logger.d { "Handling SearchLocationsByTextQuery with searchTerm: ${query.searchTerm}, includeDeleted: ${query.includeDeleted}" }
 
-            val locations = locationRepository.searchByTextAsync(
-                searchTerm = query.searchTerm,
-                includeDeleted = query.includeDeleted
-            )
-
-            logger.i { "Found ${locations.size} locations matching search term: ${query.searchTerm}" }
-
-            SearchLocationsByTextQueryResult(
-                locations = locations,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to search locations by text: ${query.searchTerm}" }
-            SearchLocationsByTextQueryResult(
-                locations = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.searchByTextAsync(
+            searchTerm = query.searchTerm,
+            includeDeleted = query.includeDeleted
+        )) {
+            is Result.Success -> {
+                logger.i { "Found ${result.data.size} locations matching search term: ${query.searchTerm}" }
+                SearchLocationsByTextQueryResult(
+                    locations = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to search locations by text: ${query.searchTerm} - ${result.error}" }
+                SearchLocationsByTextQueryResult(
+                    locations = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.weather.GetForecasts
 import com.x3squaredcircles.photography.application.queries.weather.GetForecastsByWeatherIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetForecastsByWeatherIdQueryHandler(
@@ -13,24 +14,24 @@ class GetForecastsByWeatherIdQueryHandler(
 ) : IQueryHandler<GetForecastsByWeatherIdQuery, GetForecastsByWeatherIdQueryResult> {
 
     override suspend fun handle(query: GetForecastsByWeatherIdQuery): GetForecastsByWeatherIdQueryResult {
-        return try {
-            logger.d { "Handling GetForecastsByWeatherIdQuery with weatherId: ${query.weatherId}" }
+        logger.d { "Handling GetForecastsByWeatherIdQuery with weatherId: ${query.weatherId}" }
 
-            val forecasts = weatherRepository.getForecastsByWeatherIdAsync(query.weatherId)
-
-            logger.i { "Retrieved ${forecasts.size} forecasts for weather id: ${query.weatherId}" }
-
-            GetForecastsByWeatherIdQueryResult(
-                forecasts = forecasts,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get forecasts by weather id: ${query.weatherId}" }
-            GetForecastsByWeatherIdQueryResult(
-                forecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = weatherRepository.getForecastsByWeatherIdAsync(query.weatherId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} forecasts for weather id: ${query.weatherId}" }
+                GetForecastsByWeatherIdQueryResult(
+                    forecasts = result.data,
+                    isSuccess = true
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get forecasts by weather id: ${query.weatherId} - ${result.error}" }
+                GetForecastsByWeatherIdQueryResult(
+                    forecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = result.error
+                )
+            }
         }
     }
 }
