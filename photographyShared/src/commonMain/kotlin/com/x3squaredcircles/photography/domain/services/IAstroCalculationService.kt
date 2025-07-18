@@ -1,6 +1,7 @@
 // photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/domain/services/IAstroCalculationService.kt
 package com.x3squaredcircles.photography.domain.services
 
+import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.enums.ConstellationType
 import com.x3squaredcircles.photography.domain.enums.CoordinateType
 import com.x3squaredcircles.photography.domain.enums.PlanetType
@@ -21,45 +22,45 @@ interface IAstroCalculationService {
         dateTime: Instant,
         latitude: Double,
         longitude: Double
-    ): PlanetPositionData
+    ): Result<PlanetPositionData>
 
     suspend fun getVisiblePlanetsAsync(
         dateTime: Instant,
         latitude: Double,
         longitude: Double
-    ): List<PlanetPositionData>
+    ): Result<List<PlanetPositionData>>
 
     suspend fun getPlanetaryConjunctionsAsync(
         startDate: Instant,
         endDate: Instant,
         latitude: Double,
         longitude: Double
-    ): List<PlanetaryConjunction>
+    ): Result<List<PlanetaryConjunction>>
 
     suspend fun getPlanetOppositionsAsync(
         startDate: Instant,
         endDate: Instant
-    ): List<PlanetaryEvent>
+    ): Result<List<PlanetaryEvent>>
 
     suspend fun getEnhancedMoonDataAsync(
         dateTime: Instant,
         latitude: Double,
         longitude: Double
-    ): EnhancedMoonData
+    ): Result<EnhancedMoonData>
 
     suspend fun getConstellationDataAsync(
         constellation: ConstellationType,
         date: Instant,
         latitude: Double,
         longitude: Double
-    ): ConstellationData
+    ): Result<ConstellationData>
 
     suspend fun getDeepSkyObjectDataAsync(
         catalogId: String,
         dateTime: Instant,
         latitude: Double,
         longitude: Double
-    ): DeepSkyObjectData
+    ): Result<DeepSkyObjectData>
 
     suspend fun transformCoordinatesAsync(
         fromType: CoordinateType,
@@ -69,7 +70,7 @@ interface IAstroCalculationService {
         dateTime: Instant,
         latitude: Double,
         longitude: Double
-    ): CoordinateTransformResult
+    ): Result<CoordinateTransformResult>
 
     suspend fun getAtmosphericCorrectionAsync(
         altitude: Double,
@@ -77,5 +78,5 @@ interface IAstroCalculationService {
         temperature: Double,
         pressure: Double,
         humidity: Double
-    ): AtmosphericCorrectionData
+    ): Result<AtmosphericCorrectionData>
 }
