@@ -54,7 +54,7 @@ kotlin {
                 
                 // Dependency Injection
                 implementation("io.insert-koin:koin-core:${rootProject.extra["koin_version"]}")
-                
+                implementation("io.github.cosinekitty:astronomy:2.1.19")
                 // Logging
                 implementation("co.touchlab:kermit:1.2.2")
                 implementation("com.drewnoakes:metadata-extractor:2.19.0")

@@ -196,7 +196,7 @@ class DatabaseInitializer(
                 "Landscape", "Silhouette", "Building", "Person", "Baby", "Animals",
                 "BlurryWater", "Night", "BlueHour", "GoldenHour", "Sunset"
             )
-
+            //TODO: fix this to use JSON
             val batchSize = 3
             for (i in tipTypeNames.indices step batchSize) {
                 val batch = tipTypeNames.sliceArray(i until minOf(i + batchSize, tipTypeNames.size))
