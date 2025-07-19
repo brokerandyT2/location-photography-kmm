@@ -13,23 +13,27 @@ class GetCameraBodyByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetCameraBodyByIdQuery, GetCameraBodyByIdQueryResult> {
 
-    override suspend fun handle(query: GetCameraBodyByIdQuery): GetCameraBodyByIdQueryResult {
+    override suspend fun handle(query: GetCameraBodyByIdQuery): Result<GetCameraBodyByIdQueryResult> {
         logger.d { "Handling GetCameraBodyByIdQuery with id: ${query.id}" }
 
         return when (val result = cameraBodyRepository.getByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Retrieved camera body with id: ${query.id}, found: ${result.data != null}" }
-                GetCameraBodyByIdQueryResult(
-                    cameraBody = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetCameraBodyByIdQueryResult(
+                        cameraBody = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get camera body by id: ${query.id} - ${result.error}" }
-                GetCameraBodyByIdQueryResult(
-                    cameraBody = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetCameraBodyByIdQueryResult(
+                        cameraBody = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

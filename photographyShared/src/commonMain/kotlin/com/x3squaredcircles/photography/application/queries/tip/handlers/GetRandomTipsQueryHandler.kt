@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tip.GetRandomTipsQue
 import com.x3squaredcircles.photography.application.queries.tip.GetRandomTipsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetRandomTipsQueryHandler(
@@ -12,25 +13,29 @@ class GetRandomTipsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetRandomTipsQuery, GetRandomTipsQueryResult> {
 
-    override suspend fun handle(query: GetRandomTipsQuery): GetRandomTipsQueryResult {
-        return try {
-            logger.d { "Handling GetRandomTipsQuery with count: ${query.count}" }
+    override suspend fun handle(query: GetRandomTipsQuery): Result<GetRandomTipsQueryResult> {
+        logger.d { "Handling GetRandomTipsQuery with count: ${query.count}" }
 
-            val tips = tipRepository.getRandomAsync(query.count)
-
-            logger.i { "Retrieved ${tips.size} random tips" }
-
-            GetRandomTipsQueryResult(
-                tips = tips,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get random tips with count: ${query.count}" }
-            GetRandomTipsQueryResult(
-                tips = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipRepository.getRandomAsync(query.count)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} random tips" }
+                Result.success(
+                    GetRandomTipsQueryResult(
+                        tips = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get random tips with count: ${query.count} - ${result.error}" }
+                Result.success(
+                    GetRandomTipsQueryResult(
+                        tips = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

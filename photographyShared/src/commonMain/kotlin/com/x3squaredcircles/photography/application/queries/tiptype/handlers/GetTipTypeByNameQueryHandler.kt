@@ -13,23 +13,27 @@ class GetTipTypeByNameQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetTipTypeByNameQuery, GetTipTypeByNameQueryResult> {
 
-    override suspend fun handle(query: GetTipTypeByNameQuery): GetTipTypeByNameQueryResult {
+    override suspend fun handle(query: GetTipTypeByNameQuery): Result<GetTipTypeByNameQueryResult> {
         logger.d { "Handling GetTipTypeByNameQuery with name: ${query.name}" }
 
         return when (val result = tipTypeRepository.getByNameAsync(query.name)) {
             is Result.Success -> {
                 logger.i { "Retrieved tip type with name: ${query.name}, found: ${result.data != null}" }
-                GetTipTypeByNameQueryResult(
-                    tipType = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetTipTypeByNameQueryResult(
+                        tipType = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get tip type by name: ${query.name} - ${result.error}" }
-                GetTipTypeByNameQueryResult(
-                    tipType = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetTipTypeByNameQueryResult(
+                        tipType = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

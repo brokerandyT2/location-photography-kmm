@@ -3,17 +3,17 @@ package com.x3squaredcircles.photography.application.queries.location.handlers
 
 import com.x3squaredcircles.photography.application.queries.location.GetAllLocationsQuery
 import com.x3squaredcircles.photography.application.queries.location.GetAllLocationsQueryResult
+import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
 import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
-import com.x3squaredcircles.photography.application.queries.IQueryHandler
 
 class GetAllLocationsQueryHandler(
     private val locationRepository: ILocationRepository,
     private val logger: Logger
 ) : IQueryHandler<GetAllLocationsQuery, GetAllLocationsQueryResult> {
 
-    override suspend fun handle(query: GetAllLocationsQuery): GetAllLocationsQueryResult {
+    override suspend fun handle(query: GetAllLocationsQuery): Result<GetAllLocationsQueryResult> {
         logger.d { "Handling GetAllLocationsQuery with includeDeleted: ${query.includeDeleted}" }
 
         val result = if (query.includeDeleted) {
@@ -25,17 +25,21 @@ class GetAllLocationsQueryHandler(
         return when (result) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} locations" }
-                GetAllLocationsQueryResult(
-                    locations = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetAllLocationsQueryResult(
+                        locations = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get all locations: ${result.error}" }
-                GetAllLocationsQueryResult(
-                    locations = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetAllLocationsQueryResult(
+                        locations = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

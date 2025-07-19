@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.GetRecentLo
 import com.x3squaredcircles.photography.application.queries.location.GetRecentLocationsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetRecentLocationsQueryHandler(
@@ -12,25 +13,29 @@ class GetRecentLocationsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetRecentLocationsQuery, GetRecentLocationsQueryResult> {
 
-    override suspend fun handle(query: GetRecentLocationsQuery): GetRecentLocationsQueryResult {
-        return try {
-            logger.d { "Handling GetRecentLocationsQuery with count: ${query.count}" }
+    override suspend fun handle(query: GetRecentLocationsQuery): Result<GetRecentLocationsQueryResult> {
+        logger.d { "Handling GetRecentLocationsQuery with count: ${query.count}" }
 
-            val locations = locationRepository.getRecentAsync(query.count)
-
-            logger.i { "Retrieved ${locations.size} recent locations" }
-
-            GetRecentLocationsQueryResult(
-                locations = locations,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get recent locations" }
-            GetRecentLocationsQueryResult(
-                locations = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.getRecentAsync(query.count)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} recent locations" }
+                Result.success(
+                    GetRecentLocationsQueryResult(
+                        locations = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get recent locations: ${result.error}" }
+                Result.success(
+                    GetRecentLocationsQueryResult(
+                        locations = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

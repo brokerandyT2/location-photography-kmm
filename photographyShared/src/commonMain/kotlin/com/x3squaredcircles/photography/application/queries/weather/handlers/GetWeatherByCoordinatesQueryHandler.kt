@@ -14,7 +14,7 @@ class GetWeatherByCoordinatesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetWeatherByCoordinatesQuery, GetWeatherByCoordinatesQueryResult> {
 
-    override suspend fun handle(query: GetWeatherByCoordinatesQuery): GetWeatherByCoordinatesQueryResult {
+    override suspend fun handle(query: GetWeatherByCoordinatesQuery): Result<GetWeatherByCoordinatesQueryResult> {
         logger.d { "Handling GetWeatherByCoordinatesQuery with coordinates: (${query.latitude}, ${query.longitude})" }
 
         return try {
@@ -23,26 +23,32 @@ class GetWeatherByCoordinatesQueryHandler(
             when (val result = weatherRepository.getByCoordinatesAsync(coordinate)) {
                 is Result.Success -> {
                     logger.i { "Retrieved weather for coordinates: (${query.latitude}, ${query.longitude}), found: ${result.data != null}" }
-                    GetWeatherByCoordinatesQueryResult(
-                        weather = result.data,
-                        isSuccess = true
+                    Result.success(
+                        GetWeatherByCoordinatesQueryResult(
+                            weather = result.data,
+                            isSuccess = true
+                        )
                     )
                 }
                 is Result.Failure -> {
                     logger.e { "Failed to get weather by coordinates: (${query.latitude}, ${query.longitude}) - ${result.error}" }
-                    GetWeatherByCoordinatesQueryResult(
-                        weather = null,
-                        isSuccess = false,
-                        errorMessage = result.error
+                    Result.success(
+                        GetWeatherByCoordinatesQueryResult(
+                            weather = null,
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
                     )
                 }
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to create coordinate or get weather by coordinates: (${query.latitude}, ${query.longitude})" }
-            GetWeatherByCoordinatesQueryResult(
-                weather = null,
-                isSuccess = false,
-                errorMessage = ex.message ?: "Unknown error occurred"
+            Result.success(
+                GetWeatherByCoordinatesQueryResult(
+                    weather = null,
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

@@ -13,23 +13,27 @@ class GetWeatherByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetWeatherByIdQuery, GetWeatherByIdQueryResult> {
 
-    override suspend fun handle(query: GetWeatherByIdQuery): GetWeatherByIdQueryResult {
+    override suspend fun handle(query: GetWeatherByIdQuery): Result<GetWeatherByIdQueryResult> {
         logger.d { "Handling GetWeatherByIdQuery with id: ${query.id}" }
 
         return when (val result = weatherRepository.getByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Retrieved weather with id: ${query.id}, found: ${result.data != null}" }
-                GetWeatherByIdQueryResult(
-                    weather = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetWeatherByIdQueryResult(
+                        weather = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get weather by id: ${query.id} - ${result.error}" }
-                GetWeatherByIdQueryResult(
-                    weather = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetWeatherByIdQueryResult(
+                        weather = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

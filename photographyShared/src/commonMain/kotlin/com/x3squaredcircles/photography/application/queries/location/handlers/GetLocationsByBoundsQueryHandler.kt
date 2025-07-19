@@ -13,7 +13,7 @@ class GetLocationsByBoundsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetLocationsByBoundsQuery, GetLocationsByBoundsQueryResult> {
 
-    override suspend fun handle(query: GetLocationsByBoundsQuery): GetLocationsByBoundsQueryResult {
+    override suspend fun handle(query: GetLocationsByBoundsQuery): Result<GetLocationsByBoundsQueryResult> {
         logger.d { "Handling GetLocationsByBoundsQuery - bounds: (${query.southLatitude}, ${query.westLongitude}) to (${query.northLatitude}, ${query.eastLongitude})" }
 
         return when (val result = locationRepository.getByBoundsAsync(
@@ -24,17 +24,21 @@ class GetLocationsByBoundsQueryHandler(
         )) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} locations within bounds" }
-                GetLocationsByBoundsQueryResult(
-                    locations = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetLocationsByBoundsQueryResult(
+                        locations = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get locations by bounds: ${result.error}" }
-                GetLocationsByBoundsQueryResult(
-                    locations = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetLocationsByBoundsQueryResult(
+                        locations = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

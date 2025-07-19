@@ -13,7 +13,7 @@ class LocationExistsByTitleQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<LocationExistsByTitleQuery, LocationExistsByTitleQueryResult> {
 
-    override suspend fun handle(query: LocationExistsByTitleQuery): LocationExistsByTitleQueryResult {
+    override suspend fun handle(query: LocationExistsByTitleQuery): Result<LocationExistsByTitleQueryResult> {
         logger.d { "Handling LocationExistsByTitleQuery with title: ${query.title}, excludeId: ${query.excludeId}" }
 
         return when (val result = locationRepository.existsByTitleAsync(
@@ -22,17 +22,21 @@ class LocationExistsByTitleQueryHandler(
         )) {
             is Result.Success -> {
                 logger.i { "Location exists check for title '${query.title}' (excluding id ${query.excludeId}): ${result.data}" }
-                LocationExistsByTitleQueryResult(
-                    exists = result.data,
-                    isSuccess = true
+                Result.success(
+                    LocationExistsByTitleQueryResult(
+                        exists = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to check if location exists by title: ${query.title} - ${result.error}" }
-                LocationExistsByTitleQueryResult(
-                    exists = false,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    LocationExistsByTitleQueryResult(
+                        exists = false,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

@@ -13,23 +13,27 @@ class GetDailyForecastByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetDailyForecastByIdQuery, GetDailyForecastByIdQueryResult> {
 
-    override suspend fun handle(query: GetDailyForecastByIdQuery): GetDailyForecastByIdQueryResult {
+    override suspend fun handle(query: GetDailyForecastByIdQuery): Result<GetDailyForecastByIdQueryResult> {
         logger.d { "Handling GetDailyForecastByIdQuery with id: ${query.id}" }
 
         return when (val result = dailyForecastRepository.getByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Retrieved daily forecast with id: ${query.id}, found: ${result.data != null}" }
-                GetDailyForecastByIdQueryResult(
-                    dailyForecast = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetDailyForecastByIdQueryResult(
+                        dailyForecast = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get daily forecast by id: ${query.id} - ${result.error}" }
-                GetDailyForecastByIdQueryResult(
-                    dailyForecast = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetDailyForecastByIdQueryResult(
+                        dailyForecast = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

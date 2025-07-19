@@ -13,23 +13,27 @@ class GetUserCreatedCameraBodiesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetUserCreatedCameraBodiesQuery, GetUserCreatedCameraBodiesQueryResult> {
 
-    override suspend fun handle(query: GetUserCreatedCameraBodiesQuery): GetUserCreatedCameraBodiesQueryResult {
+    override suspend fun handle(query: GetUserCreatedCameraBodiesQuery): Result<GetUserCreatedCameraBodiesQueryResult> {
         logger.d { "Handling GetUserCreatedCameraBodiesQuery" }
 
         return when (val result = cameraBodyRepository.getUserCreatedAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} user created camera bodies" }
-                GetUserCreatedCameraBodiesQueryResult(
-                    cameraBodies = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetUserCreatedCameraBodiesQueryResult(
+                        cameraBodies = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get user created camera bodies: ${result.error}" }
-                GetUserCreatedCameraBodiesQueryResult(
-                    cameraBodies = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetUserCreatedCameraBodiesQueryResult(
+                        cameraBodies = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

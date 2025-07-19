@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypesT
 import com.x3squaredcircles.photography.application.queries.tiptype.GetTipTypesTotalCountQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipTypeRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetTipTypesTotalCountQueryHandler(
@@ -12,25 +13,29 @@ class GetTipTypesTotalCountQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetTipTypesTotalCountQuery, GetTipTypesTotalCountQueryResult> {
 
-    override suspend fun handle(query: GetTipTypesTotalCountQuery): GetTipTypesTotalCountQueryResult {
-        return try {
-            logger.d { "Handling GetTipTypesTotalCountQuery" }
+    override suspend fun handle(query: GetTipTypesTotalCountQuery): Result<GetTipTypesTotalCountQueryResult> {
+        logger.d { "Handling GetTipTypesTotalCountQuery" }
 
-            val count = tipTypeRepository.getTotalCountAsync()
-
-            logger.i { "Retrieved total tip types count: $count" }
-
-            GetTipTypesTotalCountQueryResult(
-                count = count,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get tip types total count" }
-            GetTipTypesTotalCountQueryResult(
-                count = 0L,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipTypeRepository.getTotalCountAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved total tip types count: ${result.data}" }
+                Result.success(
+                    GetTipTypesTotalCountQueryResult(
+                        count = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get tip types total count: ${result.error}" }
+                Result.success(
+                    GetTipTypesTotalCountQueryResult(
+                        count = 0L,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

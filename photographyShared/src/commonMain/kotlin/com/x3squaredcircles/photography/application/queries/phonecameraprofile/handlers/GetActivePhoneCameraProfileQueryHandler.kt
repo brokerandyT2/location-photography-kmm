@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.phonecameraprofile.G
 import com.x3squaredcircles.photography.application.queries.phonecameraprofile.GetActivePhoneCameraProfileQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IPhoneCameraProfileRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetActivePhoneCameraProfileQueryHandler(
@@ -12,25 +13,29 @@ class GetActivePhoneCameraProfileQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetActivePhoneCameraProfileQuery, GetActivePhoneCameraProfileQueryResult> {
 
-    override suspend fun handle(query: GetActivePhoneCameraProfileQuery): GetActivePhoneCameraProfileQueryResult {
-        return try {
-            logger.d { "Handling GetActivePhoneCameraProfileQuery" }
+    override suspend fun handle(query: GetActivePhoneCameraProfileQuery): Result<GetActivePhoneCameraProfileQueryResult> {
+        logger.d { "Handling GetActivePhoneCameraProfileQuery" }
 
-            val profile = phoneCameraProfileRepository.getActiveAsync()
-
-            logger.i { "Retrieved active phone camera profile: ${profile != null}" }
-
-            GetActivePhoneCameraProfileQueryResult(
-                profile = profile,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get active phone camera profile" }
-            GetActivePhoneCameraProfileQueryResult(
-                profile = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = phoneCameraProfileRepository.getActiveAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved active phone camera profile: ${result.data != null}" }
+                Result.success(
+                    GetActivePhoneCameraProfileQueryResult(
+                        profile = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get active phone camera profile: ${result.error}" }
+                Result.success(
+                    GetActivePhoneCameraProfileQueryResult(
+                        profile = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

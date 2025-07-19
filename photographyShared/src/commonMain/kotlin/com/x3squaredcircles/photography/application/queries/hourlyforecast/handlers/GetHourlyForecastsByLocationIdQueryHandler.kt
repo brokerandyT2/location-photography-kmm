@@ -13,23 +13,27 @@ class GetHourlyForecastsByLocationIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetHourlyForecastsByLocationIdQuery, GetHourlyForecastsByLocationIdQueryResult> {
 
-    override suspend fun handle(query: GetHourlyForecastsByLocationIdQuery): GetHourlyForecastsByLocationIdQueryResult {
+    override suspend fun handle(query: GetHourlyForecastsByLocationIdQuery): Result<GetHourlyForecastsByLocationIdQueryResult> {
         logger.d { "Handling GetHourlyForecastsByLocationIdQuery with locationId: ${query.locationId}" }
 
         return when (val result = hourlyForecastRepository.getByLocationIdAsync(query.locationId)) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} hourly forecasts for locationId: ${query.locationId}" }
-                GetHourlyForecastsByLocationIdQueryResult(
-                    hourlyForecasts = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetHourlyForecastsByLocationIdQueryResult(
+                        hourlyForecasts = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get hourly forecasts by location id: ${query.locationId} - ${result.error}" }
-                GetHourlyForecastsByLocationIdQueryResult(
-                    hourlyForecasts = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetHourlyForecastsByLocationIdQueryResult(
+                        hourlyForecasts = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

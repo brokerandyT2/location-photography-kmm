@@ -13,7 +13,7 @@ class GetWeatherByLocationAndTimeRangeQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetWeatherByLocationAndTimeRangeQuery, GetWeatherByLocationAndTimeRangeQueryResult> {
 
-    override suspend fun handle(query: GetWeatherByLocationAndTimeRangeQuery): GetWeatherByLocationAndTimeRangeQueryResult {
+    override suspend fun handle(query: GetWeatherByLocationAndTimeRangeQuery): Result<GetWeatherByLocationAndTimeRangeQueryResult> {
         logger.d { "Handling GetWeatherByLocationAndTimeRangeQuery with locationId: ${query.locationId}, startTime: ${query.startTime}, endTime: ${query.endTime}" }
 
         return when (val result = weatherRepository.getByLocationAndTimeRangeAsync(
@@ -23,17 +23,21 @@ class GetWeatherByLocationAndTimeRangeQueryHandler(
         )) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} weather records for location ${query.locationId} in time range" }
-                GetWeatherByLocationAndTimeRangeQueryResult(
-                    weather = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetWeatherByLocationAndTimeRangeQueryResult(
+                        weather = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get weather by location and time range: ${result.error}" }
-                GetWeatherByLocationAndTimeRangeQueryResult(
-                    weather = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetWeatherByLocationAndTimeRangeQueryResult(
+                        weather = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

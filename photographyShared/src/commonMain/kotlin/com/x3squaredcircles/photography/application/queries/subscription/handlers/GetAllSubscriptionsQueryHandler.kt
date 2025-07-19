@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.subscription.GetAllS
 import com.x3squaredcircles.photography.application.queries.subscription.GetAllSubscriptionsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllSubscriptionsQueryHandler(
@@ -12,25 +13,29 @@ class GetAllSubscriptionsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllSubscriptionsQuery, GetAllSubscriptionsQueryResult> {
 
-    override suspend fun handle(query: GetAllSubscriptionsQuery): GetAllSubscriptionsQueryResult {
-        return try {
-            logger.d { "Handling GetAllSubscriptionsQuery" }
+    override suspend fun handle(query: GetAllSubscriptionsQuery): Result<GetAllSubscriptionsQueryResult> {
+        logger.d { "Handling GetAllSubscriptionsQuery" }
 
-            val subscriptions = subscriptionRepository.getAllAsync()
-
-            logger.i { "Retrieved ${subscriptions.size} subscriptions" }
-
-            GetAllSubscriptionsQueryResult(
-                subscriptions = subscriptions,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all subscriptions" }
-            GetAllSubscriptionsQueryResult(
-                subscriptions = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} subscriptions" }
+                Result.success(
+                    GetAllSubscriptionsQueryResult(
+                        subscriptions = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all subscriptions: ${result.error}" }
+                Result.success(
+                    GetAllSubscriptionsQueryResult(
+                        subscriptions = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

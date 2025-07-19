@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tip.GetTipsTotalCoun
 import com.x3squaredcircles.photography.application.queries.tip.GetTipsTotalCountQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetTipsTotalCountQueryHandler(
@@ -12,25 +13,29 @@ class GetTipsTotalCountQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetTipsTotalCountQuery, GetTipsTotalCountQueryResult> {
 
-    override suspend fun handle(query: GetTipsTotalCountQuery): GetTipsTotalCountQueryResult {
-        return try {
-            logger.d { "Handling GetTipsTotalCountQuery" }
+    override suspend fun handle(query: GetTipsTotalCountQuery): Result<GetTipsTotalCountQueryResult> {
+        logger.d { "Handling GetTipsTotalCountQuery" }
 
-            val count = tipRepository.getTotalCountAsync()
-
-            logger.i { "Retrieved total tips count: $count" }
-
-            GetTipsTotalCountQueryResult(
-                count = count,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get tips total count" }
-            GetTipsTotalCountQueryResult(
-                count = 0L,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipRepository.getTotalCountAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved total tips count: ${result.data}" }
+                Result.success(
+                    GetTipsTotalCountQueryResult(
+                        count = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get tips total count: ${result.error}" }
+                Result.success(
+                    GetTipsTotalCountQueryResult(
+                        count = 0L,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

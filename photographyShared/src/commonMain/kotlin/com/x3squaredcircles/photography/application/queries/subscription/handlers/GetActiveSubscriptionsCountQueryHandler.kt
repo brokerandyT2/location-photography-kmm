@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.subscription.GetActi
 import com.x3squaredcircles.photography.application.queries.subscription.GetActiveSubscriptionsCountQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetActiveSubscriptionsCountQueryHandler(
@@ -12,25 +13,29 @@ class GetActiveSubscriptionsCountQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetActiveSubscriptionsCountQuery, GetActiveSubscriptionsCountQueryResult> {
 
-    override suspend fun handle(query: GetActiveSubscriptionsCountQuery): GetActiveSubscriptionsCountQueryResult {
-        return try {
-            logger.d { "Handling GetActiveSubscriptionsCountQuery with currentTime: ${query.currentTime}" }
+    override suspend fun handle(query: GetActiveSubscriptionsCountQuery): Result<GetActiveSubscriptionsCountQueryResult> {
+        logger.d { "Handling GetActiveSubscriptionsCountQuery with currentTime: ${query.currentTime}" }
 
-            val count = subscriptionRepository.getActiveCountAsync(query.currentTime)
-
-            logger.i { "Retrieved active subscriptions count: $count" }
-
-            GetActiveSubscriptionsCountQueryResult(
-                count = count,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get active subscriptions count" }
-            GetActiveSubscriptionsCountQueryResult(
-                count = 0L,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getActiveCountAsync(query.currentTime)) {
+            is Result.Success -> {
+                logger.i { "Retrieved active subscriptions count: ${result.data}" }
+                Result.success(
+                    GetActiveSubscriptionsCountQueryResult(
+                        count = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get active subscriptions count: ${result.error}" }
+                Result.success(
+                    GetActiveSubscriptionsCountQueryResult(
+                        count = 0L,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

@@ -13,23 +13,27 @@ class GetLensCameraCompatibilityByLensIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetLensCameraCompatibilityByLensIdQuery, GetLensCameraCompatibilityByLensIdQueryResult> {
 
-    override suspend fun handle(query: GetLensCameraCompatibilityByLensIdQuery): GetLensCameraCompatibilityByLensIdQueryResult {
+    override suspend fun handle(query: GetLensCameraCompatibilityByLensIdQuery): Result<GetLensCameraCompatibilityByLensIdQueryResult> {
         logger.d { "Handling GetLensCameraCompatibilityByLensIdQuery with lensId: ${query.lensId}" }
 
         return when (val result = lensCameraCompatibilityRepository.getByLensIdAsync(query.lensId)) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} lens camera compatibilities for lensId: ${query.lensId}" }
-                GetLensCameraCompatibilityByLensIdQueryResult(
-                    compatibilities = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetLensCameraCompatibilityByLensIdQueryResult(
+                        compatibilities = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get lens camera compatibilities by lens id: ${query.lensId} - ${result.error}" }
-                GetLensCameraCompatibilityByLensIdQueryResult(
-                    compatibilities = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetLensCameraCompatibilityByLensIdQueryResult(
+                        compatibilities = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

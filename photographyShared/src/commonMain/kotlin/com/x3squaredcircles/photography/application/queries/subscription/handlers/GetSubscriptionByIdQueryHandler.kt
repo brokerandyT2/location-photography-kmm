@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.subscription.GetSubs
 import com.x3squaredcircles.photography.application.queries.subscription.GetSubscriptionByIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetSubscriptionByIdQueryHandler(
@@ -12,25 +13,29 @@ class GetSubscriptionByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetSubscriptionByIdQuery, GetSubscriptionByIdQueryResult> {
 
-    override suspend fun handle(query: GetSubscriptionByIdQuery): GetSubscriptionByIdQueryResult {
-        return try {
-            logger.d { "Handling GetSubscriptionByIdQuery with id: ${query.id}" }
+    override suspend fun handle(query: GetSubscriptionByIdQuery): Result<GetSubscriptionByIdQueryResult> {
+        logger.d { "Handling GetSubscriptionByIdQuery with id: ${query.id}" }
 
-            val subscription = subscriptionRepository.getByIdAsync(query.id)
-
-            logger.i { "Retrieved subscription with id: ${query.id}, found: ${subscription != null}" }
-
-            GetSubscriptionByIdQueryResult(
-                subscription = subscription,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get subscription by id: ${query.id}" }
-            GetSubscriptionByIdQueryResult(
-                subscription = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getByIdAsync(query.id)) {
+            is Result.Success -> {
+                logger.i { "Retrieved subscription with id: ${query.id}, found: ${result.data != null}" }
+                Result.success(
+                    GetSubscriptionByIdQueryResult(
+                        subscription = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get subscription by id: ${query.id} - ${result.error}" }
+                Result.success(
+                    GetSubscriptionByIdQueryResult(
+                        subscription = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

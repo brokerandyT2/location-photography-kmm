@@ -13,23 +13,27 @@ class GetUserCreatedLensesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetUserCreatedLensesQuery, GetUserCreatedLensesQueryResult> {
 
-    override suspend fun handle(query: GetUserCreatedLensesQuery): GetUserCreatedLensesQueryResult {
+    override suspend fun handle(query: GetUserCreatedLensesQuery): Result<GetUserCreatedLensesQueryResult> {
         logger.d { "Handling GetUserCreatedLensesQuery" }
 
         return when (val result = lensRepository.getUserCreatedAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} user created lenses" }
-                GetUserCreatedLensesQueryResult(
-                    lenses = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetUserCreatedLensesQueryResult(
+                        lenses = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get user created lenses: ${result.error}" }
-                GetUserCreatedLensesQueryResult(
-                    lenses = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetUserCreatedLensesQueryResult(
+                        lenses = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

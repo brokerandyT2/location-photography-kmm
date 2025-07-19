@@ -13,23 +13,27 @@ class GetLocationByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetLocationByIdQuery, GetLocationByIdQueryResult> {
 
-    override suspend fun handle(query: GetLocationByIdQuery): GetLocationByIdQueryResult {
+    override suspend fun handle(query: GetLocationByIdQuery): Result<GetLocationByIdQueryResult> {
         logger.d { "Handling GetLocationByIdQuery with id: ${query.id}" }
 
         return when (val result = locationRepository.getByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Retrieved location with id: ${query.id}, found: ${result.data != null}" }
-                GetLocationByIdQueryResult(
-                    location = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetLocationByIdQueryResult(
+                        location = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get location by id: ${query.id} - ${result.error}" }
-                GetLocationByIdQueryResult(
-                    location = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetLocationByIdQueryResult(
+                        location = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

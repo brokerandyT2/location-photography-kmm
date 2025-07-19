@@ -13,23 +13,27 @@ class GetCompatibleLensesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetCompatibleLensesQuery, GetCompatibleLensesQueryResult> {
 
-    override suspend fun handle(query: GetCompatibleLensesQuery): GetCompatibleLensesQueryResult {
+    override suspend fun handle(query: GetCompatibleLensesQuery): Result<GetCompatibleLensesQueryResult> {
         logger.d { "Handling GetCompatibleLensesQuery with cameraBodyId: ${query.cameraBodyId}" }
 
         return when (val result = lensRepository.getCompatibleLensesAsync(query.cameraBodyId)) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} compatible lenses for cameraBodyId: ${query.cameraBodyId}" }
-                GetCompatibleLensesQueryResult(
-                    lenses = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetCompatibleLensesQueryResult(
+                        lenses = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get compatible lenses for cameraBodyId: ${query.cameraBodyId} - ${result.error}" }
-                GetCompatibleLensesQueryResult(
-                    lenses = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetCompatibleLensesQueryResult(
+                        lenses = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

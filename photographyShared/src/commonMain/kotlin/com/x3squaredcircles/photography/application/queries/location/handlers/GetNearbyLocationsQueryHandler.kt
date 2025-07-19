@@ -6,6 +6,7 @@ import com.x3squaredcircles.photography.application.queries.location.GetNearbyLo
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
 import com.x3squaredcircles.core.domain.valueobjects.Coordinate
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetNearbyLocationsQueryHandler(
@@ -13,30 +14,45 @@ class GetNearbyLocationsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetNearbyLocationsQuery, GetNearbyLocationsQueryResult> {
 
-    override suspend fun handle(query: GetNearbyLocationsQuery): GetNearbyLocationsQueryResult {
-        return try {
-            logger.d { "Handling GetNearbyLocationsQuery - center: (${query.centerLatitude}, ${query.centerLongitude}), radius: ${query.radiusKm}km, limit: ${query.limit}" }
+    override suspend fun handle(query: GetNearbyLocationsQuery): Result<GetNearbyLocationsQueryResult> {
+        logger.d { "Handling GetNearbyLocationsQuery - center: (${query.centerLatitude}, ${query.centerLongitude}), radius: ${query.radiusKm}km, limit: ${query.limit}" }
 
+        return try {
             val centerCoordinate = Coordinate.create(query.centerLatitude, query.centerLongitude)
 
-            val locations = locationRepository.getNearbyAsync(
+            when (val result = locationRepository.getNearbyAsync(
                 centerCoordinate = centerCoordinate,
                 radiusKm = query.radiusKm,
                 limit = query.limit
-            )
-
-            logger.i { "Retrieved ${locations.size} nearby locations within ${query.radiusKm}km" }
-
-            GetNearbyLocationsQueryResult(
-                locations = locations,
-                isSuccess = true
-            )
+            )) {
+                is Result.Success -> {
+                    logger.i { "Retrieved ${result.data.size} nearby locations within ${query.radiusKm}km" }
+                    Result.success(
+                        GetNearbyLocationsQueryResult(
+                            locations = result.data,
+                            isSuccess = true
+                        )
+                    )
+                }
+                is Result.Failure -> {
+                    logger.e { "Failed to get nearby locations - ${result.error}" }
+                    Result.success(
+                        GetNearbyLocationsQueryResult(
+                            locations = emptyList(),
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
+                    )
+                }
+            }
         } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get nearby locations" }
-            GetNearbyLocationsQueryResult(
-                locations = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
+            logger.e(ex) { "Failed to create coordinate or get nearby locations" }
+            Result.success(
+                GetNearbyLocationsQueryResult(
+                    locations = emptyList(),
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

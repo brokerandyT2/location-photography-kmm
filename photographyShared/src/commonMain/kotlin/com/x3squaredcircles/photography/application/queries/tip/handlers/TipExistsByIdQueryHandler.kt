@@ -13,23 +13,27 @@ class TipExistsByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<TipExistsByIdQuery, TipExistsByIdQueryResult> {
 
-    override suspend fun handle(query: TipExistsByIdQuery): TipExistsByIdQueryResult {
+    override suspend fun handle(query: TipExistsByIdQuery): Result<TipExistsByIdQueryResult> {
         logger.d { "Handling TipExistsByIdQuery with id: ${query.id}" }
 
         return when (val result = tipRepository.existsByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Tip exists check for id ${query.id}: ${result.data}" }
-                TipExistsByIdQueryResult(
-                    exists = result.data,
-                    isSuccess = true
+                Result.success(
+                    TipExistsByIdQueryResult(
+                        exists = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to check if tip exists by id: ${query.id} - ${result.error}" }
-                TipExistsByIdQueryResult(
-                    exists = false,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    TipExistsByIdQueryResult(
+                        exists = false,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

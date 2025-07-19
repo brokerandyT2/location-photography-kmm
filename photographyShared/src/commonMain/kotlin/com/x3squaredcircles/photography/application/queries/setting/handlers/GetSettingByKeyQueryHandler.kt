@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.setting.GetSettingBy
 import com.x3squaredcircles.photography.application.queries.setting.GetSettingByKeyQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISettingRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetSettingByKeyQueryHandler(
@@ -12,25 +13,29 @@ class GetSettingByKeyQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetSettingByKeyQuery, GetSettingByKeyQueryResult> {
 
-    override suspend fun handle(query: GetSettingByKeyQuery): GetSettingByKeyQueryResult {
-        return try {
-            logger.d { "Handling GetSettingByKeyQuery with key: ${query.key}" }
+    override suspend fun handle(query: GetSettingByKeyQuery): Result<GetSettingByKeyQueryResult> {
+        logger.d { "Handling GetSettingByKeyQuery with key: ${query.key}" }
 
-            val setting = settingRepository.getByKeyAsync(query.key)
-
-            logger.i { "Retrieved setting with key: ${query.key}, found: ${setting != null}" }
-
-            GetSettingByKeyQueryResult(
-                setting = setting,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get setting by key: ${query.key}" }
-            GetSettingByKeyQueryResult(
-                setting = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = settingRepository.getByKeyAsync(query.key)) {
+            is Result.Success -> {
+                logger.i { "Retrieved setting with key: ${query.key}, found: ${result.data != null}" }
+                Result.success(
+                    GetSettingByKeyQueryResult(
+                        setting = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get setting by key: ${query.key} - ${result.error}" }
+                Result.success(
+                    GetSettingByKeyQueryResult(
+                        setting = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

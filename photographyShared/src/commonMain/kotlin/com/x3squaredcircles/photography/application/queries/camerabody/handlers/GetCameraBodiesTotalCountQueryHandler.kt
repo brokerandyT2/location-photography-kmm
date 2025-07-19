@@ -13,23 +13,27 @@ class GetCameraBodiesTotalCountQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetCameraBodiesTotalCountQuery, GetCameraBodiesTotalCountQueryResult> {
 
-    override suspend fun handle(query: GetCameraBodiesTotalCountQuery): GetCameraBodiesTotalCountQueryResult {
+    override suspend fun handle(query: GetCameraBodiesTotalCountQuery): Result<GetCameraBodiesTotalCountQueryResult> {
         logger.d { "Handling GetCameraBodiesTotalCountQuery" }
 
         return when (val result = cameraBodyRepository.getTotalCountAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved total camera bodies count: ${result.data}" }
-                GetCameraBodiesTotalCountQueryResult(
-                    count = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetCameraBodiesTotalCountQueryResult(
+                        count = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get camera bodies total count: ${result.error}" }
-                GetCameraBodiesTotalCountQueryResult(
-                    count = 0L,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetCameraBodiesTotalCountQueryResult(
+                        count = 0L,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

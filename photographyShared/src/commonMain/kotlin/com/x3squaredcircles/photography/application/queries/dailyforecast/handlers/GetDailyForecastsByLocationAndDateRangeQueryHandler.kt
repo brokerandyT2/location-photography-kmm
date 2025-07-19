@@ -14,7 +14,7 @@ class GetDailyForecastsByLocationAndDateRangeQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetDailyForecastsByLocationAndDateRangeQuery, GetDailyForecastsByLocationAndDateRangeQueryResult> {
 
-    override suspend fun handle(query: GetDailyForecastsByLocationAndDateRangeQuery): GetDailyForecastsByLocationAndDateRangeQueryResult {
+    override suspend fun handle(query: GetDailyForecastsByLocationAndDateRangeQuery): Result<GetDailyForecastsByLocationAndDateRangeQueryResult> {
         logger.d { "Handling GetDailyForecastsByLocationAndDateRangeQuery with locationId: ${query.locationId}, startDate: ${query.startDate}, endDate: ${query.endDate}" }
 
         return try {
@@ -24,26 +24,32 @@ class GetDailyForecastsByLocationAndDateRangeQueryHandler(
             when (val result = dailyForecastRepository.getByLocationAndDateRangeAsync(query.locationId, startDate, endDate)) {
                 is Result.Success -> {
                     logger.i { "Retrieved ${result.data.size} daily forecasts for locationId: ${query.locationId} in date range" }
-                    GetDailyForecastsByLocationAndDateRangeQueryResult(
-                        dailyForecasts = result.data,
-                        isSuccess = true
+                    Result.success(
+                        GetDailyForecastsByLocationAndDateRangeQueryResult(
+                            dailyForecasts = result.data,
+                            isSuccess = true
+                        )
                     )
                 }
                 is Result.Failure -> {
                     logger.e { "Failed to get daily forecasts by location and date range - locationId: ${query.locationId} - ${result.error}" }
-                    GetDailyForecastsByLocationAndDateRangeQueryResult(
-                        dailyForecasts = emptyList(),
-                        isSuccess = false,
-                        errorMessage = result.error
+                    Result.success(
+                        GetDailyForecastsByLocationAndDateRangeQueryResult(
+                            dailyForecasts = emptyList(),
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
                     )
                 }
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to create dates or get daily forecasts by location and date range - locationId: ${query.locationId}" }
-            GetDailyForecastsByLocationAndDateRangeQueryResult(
-                dailyForecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message ?: "Unknown error occurred"
+            Result.success(
+                GetDailyForecastsByLocationAndDateRangeQueryResult(
+                    dailyForecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.phonecameraprofile.G
 import com.x3squaredcircles.photography.application.queries.phonecameraprofile.GetPhoneCameraProfilesCountQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IPhoneCameraProfileRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetPhoneCameraProfilesCountQueryHandler(
@@ -12,25 +13,29 @@ class GetPhoneCameraProfilesCountQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetPhoneCameraProfilesCountQuery, GetPhoneCameraProfilesCountQueryResult> {
 
-    override suspend fun handle(query: GetPhoneCameraProfilesCountQuery): GetPhoneCameraProfilesCountQueryResult {
-        return try {
-            logger.d { "Handling GetPhoneCameraProfilesCountQuery" }
+    override suspend fun handle(query: GetPhoneCameraProfilesCountQuery): Result<GetPhoneCameraProfilesCountQueryResult> {
+        logger.d { "Handling GetPhoneCameraProfilesCountQuery" }
 
-            val count = phoneCameraProfileRepository.getTotalCountAsync()
-
-            logger.i { "Retrieved total phone camera profiles count: $count" }
-
-            GetPhoneCameraProfilesCountQueryResult(
-                count = count,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get phone camera profiles count" }
-            GetPhoneCameraProfilesCountQueryResult(
-                count = 0L,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = phoneCameraProfileRepository.getTotalCountAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved total phone camera profiles count: ${result.data}" }
+                Result.success(
+                    GetPhoneCameraProfilesCountQueryResult(
+                        count = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get phone camera profiles count: ${result.error}" }
+                Result.success(
+                    GetPhoneCameraProfilesCountQueryResult(
+                        count = 0L,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

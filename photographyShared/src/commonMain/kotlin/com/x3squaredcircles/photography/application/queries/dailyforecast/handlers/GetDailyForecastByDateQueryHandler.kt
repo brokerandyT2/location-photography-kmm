@@ -14,7 +14,7 @@ class GetDailyForecastByDateQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetDailyForecastByDateQuery, GetDailyForecastByDateQueryResult> {
 
-    override suspend fun handle(query: GetDailyForecastByDateQuery): GetDailyForecastByDateQueryResult {
+    override suspend fun handle(query: GetDailyForecastByDateQuery): Result<GetDailyForecastByDateQueryResult> {
         logger.d { "Handling GetDailyForecastByDateQuery with weatherId: ${query.weatherId}, forecastDate: ${query.forecastDate}" }
 
         return try {
@@ -23,26 +23,32 @@ class GetDailyForecastByDateQueryHandler(
             when (val result = dailyForecastRepository.getByDateAsync(query.weatherId, forecastDate)) {
                 is Result.Success -> {
                     logger.i { "Retrieved daily forecast for weatherId: ${query.weatherId}, date: ${query.forecastDate}, found: ${result.data != null}" }
-                    GetDailyForecastByDateQueryResult(
-                        dailyForecast = result.data,
-                        isSuccess = true
+                    Result.success(
+                        GetDailyForecastByDateQueryResult(
+                            dailyForecast = result.data,
+                            isSuccess = true
+                        )
                     )
                 }
                 is Result.Failure -> {
                     logger.e { "Failed to get daily forecast by date - weatherId: ${query.weatherId}, date: ${query.forecastDate} - ${result.error}" }
-                    GetDailyForecastByDateQueryResult(
-                        dailyForecast = null,
-                        isSuccess = false,
-                        errorMessage = result.error
+                    Result.success(
+                        GetDailyForecastByDateQueryResult(
+                            dailyForecast = null,
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
                     )
                 }
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to create date or get daily forecast by date - weatherId: ${query.weatherId}, date: ${query.forecastDate}" }
-            GetDailyForecastByDateQueryResult(
-                dailyForecast = null,
-                isSuccess = false,
-                errorMessage = ex.message ?: "Unknown error occurred"
+            Result.success(
+                GetDailyForecastByDateQueryResult(
+                    dailyForecast = null,
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

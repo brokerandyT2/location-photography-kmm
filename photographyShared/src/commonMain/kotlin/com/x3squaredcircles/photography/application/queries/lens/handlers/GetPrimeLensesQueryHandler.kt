@@ -13,23 +13,27 @@ class GetPrimeLensesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetPrimeLensesQuery, GetPrimeLensesQueryResult> {
 
-    override suspend fun handle(query: GetPrimeLensesQuery): GetPrimeLensesQueryResult {
+    override suspend fun handle(query: GetPrimeLensesQuery): Result<GetPrimeLensesQueryResult> {
         logger.d { "Handling GetPrimeLensesQuery" }
 
         return when (val result = lensRepository.getPrimeLensesAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} prime lenses" }
-                GetPrimeLensesQueryResult(
-                    lenses = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetPrimeLensesQueryResult(
+                        lenses = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get prime lenses: ${result.error}" }
-                GetPrimeLensesQueryResult(
-                    lenses = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetPrimeLensesQueryResult(
+                        lenses = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

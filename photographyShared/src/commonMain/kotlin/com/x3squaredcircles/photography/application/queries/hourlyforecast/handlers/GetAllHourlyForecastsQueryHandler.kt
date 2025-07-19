@@ -13,23 +13,27 @@ class GetAllHourlyForecastsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllHourlyForecastsQuery, GetAllHourlyForecastsQueryResult> {
 
-    override suspend fun handle(query: GetAllHourlyForecastsQuery): GetAllHourlyForecastsQueryResult {
+    override suspend fun handle(query: GetAllHourlyForecastsQuery): Result<GetAllHourlyForecastsQueryResult> {
         logger.d { "Handling GetAllHourlyForecastsQuery" }
 
         return when (val result = hourlyForecastRepository.getAllAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} hourly forecasts" }
-                GetAllHourlyForecastsQueryResult(
-                    hourlyForecasts = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetAllHourlyForecastsQueryResult(
+                        hourlyForecasts = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get all hourly forecasts: ${result.error}" }
-                GetAllHourlyForecastsQueryResult(
-                    hourlyForecasts = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetAllHourlyForecastsQueryResult(
+                        hourlyForecasts = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

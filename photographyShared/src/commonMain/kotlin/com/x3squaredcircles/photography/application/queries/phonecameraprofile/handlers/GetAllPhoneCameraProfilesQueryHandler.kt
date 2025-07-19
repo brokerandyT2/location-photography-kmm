@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.phonecameraprofile.G
 import com.x3squaredcircles.photography.application.queries.phonecameraprofile.GetAllPhoneCameraProfilesQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IPhoneCameraProfileRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllPhoneCameraProfilesQueryHandler(
@@ -12,25 +13,29 @@ class GetAllPhoneCameraProfilesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllPhoneCameraProfilesQuery, GetAllPhoneCameraProfilesQueryResult> {
 
-    override suspend fun handle(query: GetAllPhoneCameraProfilesQuery): GetAllPhoneCameraProfilesQueryResult {
-        return try {
-            logger.d { "Handling GetAllPhoneCameraProfilesQuery" }
+    override suspend fun handle(query: GetAllPhoneCameraProfilesQuery): Result<GetAllPhoneCameraProfilesQueryResult> {
+        logger.d { "Handling GetAllPhoneCameraProfilesQuery" }
 
-            val profiles = phoneCameraProfileRepository.getAllAsync()
-
-            logger.i { "Retrieved ${profiles.size} phone camera profiles" }
-
-            GetAllPhoneCameraProfilesQueryResult(
-                profiles = profiles,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all phone camera profiles" }
-            GetAllPhoneCameraProfilesQueryResult(
-                profiles = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = phoneCameraProfileRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} phone camera profiles" }
+                Result.success(
+                    GetAllPhoneCameraProfilesQueryResult(
+                        profiles = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all phone camera profiles: ${result.error}" }
+                Result.success(
+                    GetAllPhoneCameraProfilesQueryResult(
+                        profiles = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

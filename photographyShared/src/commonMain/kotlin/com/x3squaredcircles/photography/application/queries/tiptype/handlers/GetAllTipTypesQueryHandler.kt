@@ -13,23 +13,27 @@ class GetAllTipTypesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllTipTypesQuery, GetAllTipTypesQueryResult> {
 
-    override suspend fun handle(query: GetAllTipTypesQuery): GetAllTipTypesQueryResult {
+    override suspend fun handle(query: GetAllTipTypesQuery): Result<GetAllTipTypesQueryResult> {
         logger.d { "Handling GetAllTipTypesQuery" }
 
         return when (val result = tipTypeRepository.getAllAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} tip types" }
-                GetAllTipTypesQueryResult(
-                    tipTypes = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetAllTipTypesQueryResult(
+                        tipTypes = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get all tip types: ${result.error}" }
-                GetAllTipTypesQueryResult(
-                    tipTypes = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetAllTipTypesQueryResult(
+                        tipTypes = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

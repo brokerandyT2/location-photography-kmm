@@ -14,7 +14,7 @@ class GetCurrentDailyForecastQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetCurrentDailyForecastQuery, GetCurrentDailyForecastQueryResult> {
 
-    override suspend fun handle(query: GetCurrentDailyForecastQuery): GetCurrentDailyForecastQueryResult {
+    override suspend fun handle(query: GetCurrentDailyForecastQuery): Result<GetCurrentDailyForecastQueryResult> {
         logger.d { "Handling GetCurrentDailyForecastQuery with weatherId: ${query.weatherId}, currentTime: ${query.currentTime}" }
 
         return try {
@@ -23,26 +23,32 @@ class GetCurrentDailyForecastQueryHandler(
             when (val result = dailyForecastRepository.getCurrentAsync(query.weatherId, currentTime)) {
                 is Result.Success -> {
                     logger.i { "Retrieved current daily forecast for weatherId: ${query.weatherId}, time: ${query.currentTime}, found: ${result.data != null}" }
-                    GetCurrentDailyForecastQueryResult(
-                        dailyForecast = result.data,
-                        isSuccess = true
+                    Result.success(
+                        GetCurrentDailyForecastQueryResult(
+                            dailyForecast = result.data,
+                            isSuccess = true
+                        )
                     )
                 }
                 is Result.Failure -> {
                     logger.e { "Failed to get current daily forecast - weatherId: ${query.weatherId}, time: ${query.currentTime} - ${result.error}" }
-                    GetCurrentDailyForecastQueryResult(
-                        dailyForecast = null,
-                        isSuccess = false,
-                        errorMessage = result.error
+                    Result.success(
+                        GetCurrentDailyForecastQueryResult(
+                            dailyForecast = null,
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
                     )
                 }
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to create time or get current daily forecast - weatherId: ${query.weatherId}, time: ${query.currentTime}" }
-            GetCurrentDailyForecastQueryResult(
-                dailyForecast = null,
-                isSuccess = false,
-                errorMessage = ex.message ?: "Unknown error occurred"
+            Result.success(
+                GetCurrentDailyForecastQueryResult(
+                    dailyForecast = null,
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

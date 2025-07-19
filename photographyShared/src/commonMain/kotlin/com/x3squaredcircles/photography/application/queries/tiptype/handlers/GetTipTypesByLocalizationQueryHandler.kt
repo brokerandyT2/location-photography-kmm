@@ -13,23 +13,27 @@ class GetTipTypesByLocalizationQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetTipTypesByLocalizationQuery, GetTipTypesByLocalizationQueryResult> {
 
-    override suspend fun handle(query: GetTipTypesByLocalizationQuery): GetTipTypesByLocalizationQueryResult {
+    override suspend fun handle(query: GetTipTypesByLocalizationQuery): Result<GetTipTypesByLocalizationQueryResult> {
         logger.d { "Handling GetTipTypesByLocalizationQuery with localization: ${query.localization}" }
 
         return when (val result = tipTypeRepository.getTipTypesByLocalizationAsync(query.localization)) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} tip types for localization: ${query.localization}" }
-                GetTipTypesByLocalizationQueryResult(
-                    tipTypes = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetTipTypesByLocalizationQueryResult(
+                        tipTypes = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get tip types by localization: ${query.localization} - ${result.error}" }
-                GetTipTypesByLocalizationQueryResult(
-                    tipTypes = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetTipTypesByLocalizationQueryResult(
+                        tipTypes = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

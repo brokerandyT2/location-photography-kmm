@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.subscription.GetExpi
 import com.x3squaredcircles.photography.application.queries.subscription.GetExpiredSubscriptionsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetExpiredSubscriptionsQueryHandler(
@@ -12,25 +13,29 @@ class GetExpiredSubscriptionsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetExpiredSubscriptionsQuery, GetExpiredSubscriptionsQueryResult> {
 
-    override suspend fun handle(query: GetExpiredSubscriptionsQuery): GetExpiredSubscriptionsQueryResult {
-        return try {
-            logger.d { "Handling GetExpiredSubscriptionsQuery with currentTime: ${query.currentTime}" }
+    override suspend fun handle(query: GetExpiredSubscriptionsQuery): Result<GetExpiredSubscriptionsQueryResult> {
+        logger.d { "Handling GetExpiredSubscriptionsQuery with currentTime: ${query.currentTime}" }
 
-            val subscriptions = subscriptionRepository.getExpiredAsync(query.currentTime)
-
-            logger.i { "Retrieved ${subscriptions.size} expired subscriptions" }
-
-            GetExpiredSubscriptionsQueryResult(
-                subscriptions = subscriptions,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get expired subscriptions" }
-            GetExpiredSubscriptionsQueryResult(
-                subscriptions = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getExpiredAsync(query.currentTime)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} expired subscriptions" }
+                Result.success(
+                    GetExpiredSubscriptionsQueryResult(
+                        subscriptions = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get expired subscriptions: ${result.error}" }
+                Result.success(
+                    GetExpiredSubscriptionsQueryResult(
+                        subscriptions = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

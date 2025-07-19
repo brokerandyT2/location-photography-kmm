@@ -13,23 +13,27 @@ class TipTypeExistsByNameQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<TipTypeExistsByNameQuery, TipTypeExistsByNameQueryResult> {
 
-    override suspend fun handle(query: TipTypeExistsByNameQuery): TipTypeExistsByNameQueryResult {
+    override suspend fun handle(query: TipTypeExistsByNameQuery): Result<TipTypeExistsByNameQueryResult> {
         logger.d { "Handling TipTypeExistsByNameQuery with name: ${query.name}, excludeId: ${query.excludeId}" }
 
         return when (val result = tipTypeRepository.existsByNameAsync(query.name, query.excludeId)) {
             is Result.Success -> {
                 logger.i { "TipType exists check for name '${query.name}' (excludeId: ${query.excludeId}): ${result.data}" }
-                TipTypeExistsByNameQueryResult(
-                    exists = result.data,
-                    isSuccess = true
+                Result.success(
+                    TipTypeExistsByNameQueryResult(
+                        exists = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to check if tip type exists by name: ${query.name} - ${result.error}" }
-                TipTypeExistsByNameQueryResult(
-                    exists = false,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    TipTypeExistsByNameQueryResult(
+                        exists = false,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

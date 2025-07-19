@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.subscription.GetSubs
 import com.x3squaredcircles.photography.application.queries.subscription.GetSubscriptionByPurchaseTokenQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetSubscriptionByPurchaseTokenQueryHandler(
@@ -12,25 +13,29 @@ class GetSubscriptionByPurchaseTokenQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetSubscriptionByPurchaseTokenQuery, GetSubscriptionByPurchaseTokenQueryResult> {
 
-    override suspend fun handle(query: GetSubscriptionByPurchaseTokenQuery): GetSubscriptionByPurchaseTokenQueryResult {
-        return try {
-            logger.d { "Handling GetSubscriptionByPurchaseTokenQuery with purchaseToken: ${query.purchaseToken}" }
+    override suspend fun handle(query: GetSubscriptionByPurchaseTokenQuery): Result<GetSubscriptionByPurchaseTokenQueryResult> {
+        logger.d { "Handling GetSubscriptionByPurchaseTokenQuery with purchaseToken: ${query.purchaseToken}" }
 
-            val subscription = subscriptionRepository.getByPurchaseTokenAsync(query.purchaseToken)
-
-            logger.i { "Retrieved subscription with purchaseToken: ${query.purchaseToken}, found: ${subscription != null}" }
-
-            GetSubscriptionByPurchaseTokenQueryResult(
-                subscription = subscription,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get subscription by purchaseToken: ${query.purchaseToken}" }
-            GetSubscriptionByPurchaseTokenQueryResult(
-                subscription = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getByPurchaseTokenAsync(query.purchaseToken)) {
+            is Result.Success -> {
+                logger.i { "Retrieved subscription with purchaseToken: ${query.purchaseToken}, found: ${result.data != null}" }
+                Result.success(
+                    GetSubscriptionByPurchaseTokenQueryResult(
+                        subscription = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get subscription by purchaseToken: ${query.purchaseToken} - ${result.error}" }
+                Result.success(
+                    GetSubscriptionByPurchaseTokenQueryResult(
+                        subscription = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

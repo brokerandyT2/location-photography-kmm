@@ -4,9 +4,9 @@ package com.x3squaredcircles.photography.application.queries.subscription.handle
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
 import com.x3squaredcircles.photography.application.queries.subscription.SubscriptionDto
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
-// Query and Result classes
 data class GetSubscriptionsByUserIdQuery(
     val userId: String
 )
@@ -22,25 +22,29 @@ class GetSubscriptionsByUserIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetSubscriptionsByUserIdQuery, GetSubscriptionsByUserIdQueryResult> {
 
-    override suspend fun handle(query: GetSubscriptionsByUserIdQuery): GetSubscriptionsByUserIdQueryResult {
-        return try {
-            logger.d { "Handling GetSubscriptionsByUserIdQuery with userId: ${query.userId}" }
+    override suspend fun handle(query: GetSubscriptionsByUserIdQuery): Result<GetSubscriptionsByUserIdQueryResult> {
+        logger.d { "Handling GetSubscriptionsByUserIdQuery with userId: ${query.userId}" }
 
-            val subscriptions = subscriptionRepository.getByUserIdAsync(query.userId)
-
-            logger.i { "Retrieved ${subscriptions.size} subscriptions for userId: ${query.userId}" }
-
-            GetSubscriptionsByUserIdQueryResult(
-                subscriptions = subscriptions,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get subscriptions by userId: ${query.userId}" }
-            GetSubscriptionsByUserIdQueryResult(
-                subscriptions = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getByUserIdAsync(query.userId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} subscriptions for userId: ${query.userId}" }
+                Result.success(
+                    GetSubscriptionsByUserIdQueryResult(
+                        subscriptions = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get subscriptions by userId: ${query.userId} - ${result.error}" }
+                Result.success(
+                    GetSubscriptionsByUserIdQueryResult(
+                        subscriptions = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

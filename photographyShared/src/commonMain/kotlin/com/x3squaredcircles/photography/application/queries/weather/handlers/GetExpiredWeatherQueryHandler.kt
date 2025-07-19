@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.weather.GetExpiredWe
 import com.x3squaredcircles.photography.application.queries.weather.GetExpiredWeatherQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.IWeatherRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetExpiredWeatherQueryHandler(
@@ -12,25 +13,29 @@ class GetExpiredWeatherQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetExpiredWeatherQuery, GetExpiredWeatherQueryResult> {
 
-    override suspend fun handle(query: GetExpiredWeatherQuery): GetExpiredWeatherQueryResult {
-        return try {
-            logger.d { "Handling GetExpiredWeatherQuery with olderThan: ${query.olderThan}" }
+    override suspend fun handle(query: GetExpiredWeatherQuery): Result<GetExpiredWeatherQueryResult> {
+        logger.d { "Handling GetExpiredWeatherQuery with olderThan: ${query.olderThan}" }
 
-            val weather = weatherRepository.getExpiredAsync(query.olderThan)
-
-            logger.i { "Retrieved ${weather.size} expired weather records" }
-
-            GetExpiredWeatherQueryResult(
-                weather = weather,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get expired weather" }
-            GetExpiredWeatherQueryResult(
-                weather = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = weatherRepository.getExpiredAsync(query.olderThan)) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} expired weather records" }
+                Result.success(
+                    GetExpiredWeatherQueryResult(
+                        weather = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get expired weather: ${result.error}" }
+                Result.success(
+                    GetExpiredWeatherQueryResult(
+                        weather = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

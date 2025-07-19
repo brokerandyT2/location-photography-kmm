@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.location.GetRandomLo
 import com.x3squaredcircles.photography.application.queries.location.GetRandomLocationQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ILocationRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetRandomLocationQueryHandler(
@@ -12,25 +13,29 @@ class GetRandomLocationQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetRandomLocationQuery, GetRandomLocationQueryResult> {
 
-    override suspend fun handle(query: GetRandomLocationQuery): GetRandomLocationQueryResult {
-        return try {
-            logger.d { "Handling GetRandomLocationQuery" }
+    override suspend fun handle(query: GetRandomLocationQuery): Result<GetRandomLocationQueryResult> {
+        logger.d { "Handling GetRandomLocationQuery" }
 
-            val location = locationRepository.getRandomAsync()
-
-            logger.i { "Retrieved random location: ${location != null}" }
-
-            GetRandomLocationQueryResult(
-                location = location,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get random location" }
-            GetRandomLocationQueryResult(
-                location = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = locationRepository.getRandomAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved random location: ${result.data != null}" }
+                Result.success(
+                    GetRandomLocationQueryResult(
+                        location = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get random location: ${result.error}" }
+                Result.success(
+                    GetRandomLocationQueryResult(
+                        location = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

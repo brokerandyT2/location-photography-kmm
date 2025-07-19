@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.setting.GetAllSettin
 import com.x3squaredcircles.photography.application.queries.setting.GetAllSettingsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISettingRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllSettingsQueryHandler(
@@ -12,25 +13,29 @@ class GetAllSettingsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllSettingsQuery, GetAllSettingsQueryResult> {
 
-    override suspend fun handle(query: GetAllSettingsQuery): GetAllSettingsQueryResult {
-        return try {
-            logger.d { "Handling GetAllSettingsQuery" }
+    override suspend fun handle(query: GetAllSettingsQuery): Result<GetAllSettingsQueryResult> {
+        logger.d { "Handling GetAllSettingsQuery" }
 
-            val settings = settingRepository.getAllAsync()
-
-            logger.i { "Retrieved ${settings.size} settings" }
-
-            GetAllSettingsQueryResult(
-                settings = settings,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all settings" }
-            GetAllSettingsQueryResult(
-                settings = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = settingRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} settings" }
+                Result.success(
+                    GetAllSettingsQueryResult(
+                        settings = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all settings: ${result.error}" }
+                Result.success(
+                    GetAllSettingsQueryResult(
+                        settings = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

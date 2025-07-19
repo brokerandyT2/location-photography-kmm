@@ -13,23 +13,27 @@ class GetAllCameraBodiesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllCameraBodiesQuery, GetAllCameraBodiesQueryResult> {
 
-    override suspend fun handle(query: GetAllCameraBodiesQuery): GetAllCameraBodiesQueryResult {
+    override suspend fun handle(query: GetAllCameraBodiesQuery): Result<GetAllCameraBodiesQueryResult> {
         logger.d { "Handling GetAllCameraBodiesQuery" }
 
         return when (val result = cameraBodyRepository.getAllAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} camera bodies" }
-                GetAllCameraBodiesQueryResult(
-                    cameraBodies = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetAllCameraBodiesQueryResult(
+                        cameraBodies = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get all camera bodies: ${result.error}" }
-                GetAllCameraBodiesQueryResult(
-                    cameraBodies = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetAllCameraBodiesQueryResult(
+                        cameraBodies = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

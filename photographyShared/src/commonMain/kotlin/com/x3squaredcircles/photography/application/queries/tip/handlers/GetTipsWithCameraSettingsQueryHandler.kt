@@ -13,23 +13,27 @@ class GetTipsWithCameraSettingsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetTipsWithCameraSettingsQuery, GetTipsWithCameraSettingsQueryResult> {
 
-    override suspend fun handle(query: GetTipsWithCameraSettingsQuery): GetTipsWithCameraSettingsQueryResult {
+    override suspend fun handle(query: GetTipsWithCameraSettingsQuery): Result<GetTipsWithCameraSettingsQueryResult> {
         logger.d { "Handling GetTipsWithCameraSettingsQuery" }
 
         return when (val result = tipRepository.getWithCameraSettingsAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} tips with camera settings" }
-                GetTipsWithCameraSettingsQueryResult(
-                    tips = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetTipsWithCameraSettingsQueryResult(
+                        tips = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get tips with camera settings: ${result.error}" }
-                GetTipsWithCameraSettingsQueryResult(
-                    tips = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetTipsWithCameraSettingsQueryResult(
+                        tips = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

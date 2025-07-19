@@ -14,7 +14,7 @@ class GetHourlyForecastsForDayQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetHourlyForecastsForDayQuery, GetHourlyForecastsForDayQueryResult> {
 
-    override suspend fun handle(query: GetHourlyForecastsForDayQuery): GetHourlyForecastsForDayQueryResult {
+    override suspend fun handle(query: GetHourlyForecastsForDayQuery): Result<GetHourlyForecastsForDayQueryResult> {
         logger.d { "Handling GetHourlyForecastsForDayQuery with weatherId: ${query.weatherId}, startTime: ${query.startTime}, endTime: ${query.endTime}" }
 
         return try {
@@ -24,26 +24,32 @@ class GetHourlyForecastsForDayQueryHandler(
             when (val result = hourlyForecastRepository.getByWeatherAndTimeRangeAsync(query.weatherId, startTime, endTime)) {
                 is Result.Success -> {
                     logger.i { "Retrieved ${result.data.size} hourly forecasts for day - weatherId: ${query.weatherId}" }
-                    GetHourlyForecastsForDayQueryResult(
-                        hourlyForecasts = result.data,
-                        isSuccess = true
+                    Result.success(
+                        GetHourlyForecastsForDayQueryResult(
+                            hourlyForecasts = result.data,
+                            isSuccess = true
+                        )
                     )
                 }
                 is Result.Failure -> {
                     logger.e { "Failed to get hourly forecasts for day - weatherId: ${query.weatherId} - ${result.error}" }
-                    GetHourlyForecastsForDayQueryResult(
-                        hourlyForecasts = emptyList(),
-                        isSuccess = false,
-                        errorMessage = result.error
+                    Result.success(
+                        GetHourlyForecastsForDayQueryResult(
+                            hourlyForecasts = emptyList(),
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
                     )
                 }
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to create times or get hourly forecasts for day - weatherId: ${query.weatherId}" }
-            GetHourlyForecastsForDayQueryResult(
-                hourlyForecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message ?: "Unknown error occurred"
+            Result.success(
+                GetHourlyForecastsForDayQueryResult(
+                    hourlyForecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

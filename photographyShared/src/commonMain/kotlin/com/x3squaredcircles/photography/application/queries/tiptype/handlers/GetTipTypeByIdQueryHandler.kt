@@ -13,23 +13,27 @@ class GetTipTypeByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetTipTypeByIdQuery, GetTipTypeByIdQueryResult> {
 
-    override suspend fun handle(query: GetTipTypeByIdQuery): GetTipTypeByIdQueryResult {
+    override suspend fun handle(query: GetTipTypeByIdQuery): Result<GetTipTypeByIdQueryResult> {
         logger.d { "Handling GetTipTypeByIdQuery with id: ${query.id}" }
 
         return when (val result = tipTypeRepository.getByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Retrieved tip type with id: ${query.id}, found: ${result.data != null}" }
-                GetTipTypeByIdQueryResult(
-                    tipType = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetTipTypeByIdQueryResult(
+                        tipType = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get tip type by id: ${query.id} - ${result.error}" }
-                GetTipTypeByIdQueryResult(
-                    tipType = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetTipTypeByIdQueryResult(
+                        tipType = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

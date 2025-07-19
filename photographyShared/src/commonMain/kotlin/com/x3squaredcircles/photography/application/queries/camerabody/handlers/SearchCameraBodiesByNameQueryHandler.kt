@@ -13,23 +13,27 @@ class SearchCameraBodiesByNameQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<SearchCameraBodiesByNameQuery, SearchCameraBodiesByNameQueryResult> {
 
-    override suspend fun handle(query: SearchCameraBodiesByNameQuery): SearchCameraBodiesByNameQueryResult {
+    override suspend fun handle(query: SearchCameraBodiesByNameQuery): Result<SearchCameraBodiesByNameQueryResult> {
         logger.d { "Handling SearchCameraBodiesByNameQuery with searchTerm: ${query.searchTerm}" }
 
         return when (val result = cameraBodyRepository.searchByNameAsync(query.searchTerm)) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} camera bodies for search term: ${query.searchTerm}" }
-                SearchCameraBodiesByNameQueryResult(
-                    cameraBodies = result.data,
-                    isSuccess = true
+                Result.success(
+                    SearchCameraBodiesByNameQueryResult(
+                        cameraBodies = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to search camera bodies by name: ${query.searchTerm} - ${result.error}" }
-                SearchCameraBodiesByNameQueryResult(
-                    cameraBodies = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    SearchCameraBodiesByNameQueryResult(
+                        cameraBodies = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

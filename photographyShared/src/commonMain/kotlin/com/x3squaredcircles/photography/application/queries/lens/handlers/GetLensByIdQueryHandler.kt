@@ -13,23 +13,27 @@ class GetLensByIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetLensByIdQuery, GetLensByIdQueryResult> {
 
-    override suspend fun handle(query: GetLensByIdQuery): GetLensByIdQueryResult {
+    override suspend fun handle(query: GetLensByIdQuery): Result<GetLensByIdQueryResult> {
         logger.d { "Handling GetLensByIdQuery with id: ${query.id}" }
 
         return when (val result = lensRepository.getByIdAsync(query.id)) {
             is Result.Success -> {
                 logger.i { "Retrieved lens with id: ${query.id}, found: ${result.data != null}" }
-                GetLensByIdQueryResult(
-                    lens = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetLensByIdQueryResult(
+                        lens = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get lens by id: ${query.id} - ${result.error}" }
-                GetLensByIdQueryResult(
-                    lens = null,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetLensByIdQueryResult(
+                        lens = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

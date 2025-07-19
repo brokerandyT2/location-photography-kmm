@@ -13,23 +13,27 @@ class GetAllLensesQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllLensesQuery, GetAllLensesQueryResult> {
 
-    override suspend fun handle(query: GetAllLensesQuery): GetAllLensesQueryResult {
+    override suspend fun handle(query: GetAllLensesQuery): Result<GetAllLensesQueryResult> {
         logger.d { "Handling GetAllLensesQuery" }
 
         return when (val result = lensRepository.getAllAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} lenses" }
-                GetAllLensesQueryResult(
-                    lenses = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetAllLensesQueryResult(
+                        lenses = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get all lenses: ${result.error}" }
-                GetAllLensesQueryResult(
-                    lenses = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetAllLensesQueryResult(
+                        lenses = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

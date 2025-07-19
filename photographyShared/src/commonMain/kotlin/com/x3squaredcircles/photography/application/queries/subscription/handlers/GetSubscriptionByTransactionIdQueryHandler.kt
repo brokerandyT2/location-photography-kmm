@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.subscription.GetSubs
 import com.x3squaredcircles.photography.application.queries.subscription.GetSubscriptionByTransactionIdQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ISubscriptionRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetSubscriptionByTransactionIdQueryHandler(
@@ -12,25 +13,29 @@ class GetSubscriptionByTransactionIdQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetSubscriptionByTransactionIdQuery, GetSubscriptionByTransactionIdQueryResult> {
 
-    override suspend fun handle(query: GetSubscriptionByTransactionIdQuery): GetSubscriptionByTransactionIdQueryResult {
-        return try {
-            logger.d { "Handling GetSubscriptionByTransactionIdQuery with transactionId: ${query.transactionId}" }
+    override suspend fun handle(query: GetSubscriptionByTransactionIdQuery): Result<GetSubscriptionByTransactionIdQueryResult> {
+        logger.d { "Handling GetSubscriptionByTransactionIdQuery with transactionId: ${query.transactionId}" }
 
-            val subscription = subscriptionRepository.getByTransactionIdAsync(query.transactionId)
-
-            logger.i { "Retrieved subscription with transactionId: ${query.transactionId}, found: ${subscription != null}" }
-
-            GetSubscriptionByTransactionIdQueryResult(
-                subscription = subscription,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get subscription by transactionId: ${query.transactionId}" }
-            GetSubscriptionByTransactionIdQueryResult(
-                subscription = null,
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = subscriptionRepository.getByTransactionIdAsync(query.transactionId)) {
+            is Result.Success -> {
+                logger.i { "Retrieved subscription with transactionId: ${query.transactionId}, found: ${result.data != null}" }
+                Result.success(
+                    GetSubscriptionByTransactionIdQueryResult(
+                        subscription = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get subscription by transactionId: ${query.transactionId} - ${result.error}" }
+                Result.success(
+                    GetSubscriptionByTransactionIdQueryResult(
+                        subscription = null,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

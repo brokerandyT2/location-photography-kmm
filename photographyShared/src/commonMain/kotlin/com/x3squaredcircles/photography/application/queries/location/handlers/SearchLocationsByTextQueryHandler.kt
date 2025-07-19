@@ -13,7 +13,7 @@ class SearchLocationsByTextQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<SearchLocationsByTextQuery, SearchLocationsByTextQueryResult> {
 
-    override suspend fun handle(query: SearchLocationsByTextQuery): SearchLocationsByTextQueryResult {
+    override suspend fun handle(query: SearchLocationsByTextQuery): Result<SearchLocationsByTextQueryResult> {
         logger.d { "Handling SearchLocationsByTextQuery with searchTerm: ${query.searchTerm}, includeDeleted: ${query.includeDeleted}" }
 
         return when (val result = locationRepository.searchByTextAsync(
@@ -22,17 +22,21 @@ class SearchLocationsByTextQueryHandler(
         )) {
             is Result.Success -> {
                 logger.i { "Found ${result.data.size} locations matching search term: ${query.searchTerm}" }
-                SearchLocationsByTextQueryResult(
-                    locations = result.data,
-                    isSuccess = true
+                Result.success(
+                    SearchLocationsByTextQueryResult(
+                        locations = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to search locations by text: ${query.searchTerm} - ${result.error}" }
-                SearchLocationsByTextQueryResult(
-                    locations = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    SearchLocationsByTextQueryResult(
+                        locations = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

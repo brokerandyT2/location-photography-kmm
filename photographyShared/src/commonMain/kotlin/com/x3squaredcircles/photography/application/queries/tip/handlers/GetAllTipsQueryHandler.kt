@@ -5,6 +5,7 @@ import com.x3squaredcircles.photography.application.queries.tip.GetAllTipsQuery
 import com.x3squaredcircles.photography.application.queries.tip.GetAllTipsQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ITipRepository
+import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
 class GetAllTipsQueryHandler(
@@ -12,25 +13,29 @@ class GetAllTipsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllTipsQuery, GetAllTipsQueryResult> {
 
-    override suspend fun handle(query: GetAllTipsQuery): GetAllTipsQueryResult {
-        return try {
-            logger.d { "Handling GetAllTipsQuery" }
+    override suspend fun handle(query: GetAllTipsQuery): Result<GetAllTipsQueryResult> {
+        logger.d { "Handling GetAllTipsQuery" }
 
-            val tips = tipRepository.getAllAsync()
-
-            logger.i { "Retrieved ${tips.size} tips" }
-
-            GetAllTipsQueryResult(
-                tips = tips,
-                isSuccess = true
-            )
-        } catch (ex: Exception) {
-            logger.e(ex) { "Failed to get all tips" }
-            GetAllTipsQueryResult(
-                tips = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message
-            )
+        return when (val result = tipRepository.getAllAsync()) {
+            is Result.Success -> {
+                logger.i { "Retrieved ${result.data.size} tips" }
+                Result.success(
+                    GetAllTipsQueryResult(
+                        tips = result.data,
+                        isSuccess = true
+                    )
+                )
+            }
+            is Result.Failure -> {
+                logger.e { "Failed to get all tips: ${result.error}" }
+                Result.success(
+                    GetAllTipsQueryResult(
+                        tips = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
+                )
+            }
         }
     }
 }

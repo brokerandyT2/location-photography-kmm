@@ -13,23 +13,27 @@ class GetAllWeatherQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetAllWeatherQuery, GetAllWeatherQueryResult> {
 
-    override suspend fun handle(query: GetAllWeatherQuery): GetAllWeatherQueryResult {
+    override suspend fun handle(query: GetAllWeatherQuery): Result<GetAllWeatherQueryResult> {
         logger.d { "Handling GetAllWeatherQuery" }
 
         return when (val result = weatherRepository.getAllAsync()) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} weather records" }
-                GetAllWeatherQueryResult(
-                    weather = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetAllWeatherQueryResult(
+                        weather = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get all weather: ${result.error}" }
-                GetAllWeatherQueryResult(
-                    weather = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetAllWeatherQueryResult(
+                        weather = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

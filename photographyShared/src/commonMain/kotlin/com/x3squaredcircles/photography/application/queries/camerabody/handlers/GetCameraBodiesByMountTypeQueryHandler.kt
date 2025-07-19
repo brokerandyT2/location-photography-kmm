@@ -13,23 +13,27 @@ class GetCameraBodiesByMountTypeQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetCameraBodiesByMountTypeQuery, GetCameraBodiesByMountTypeQueryResult> {
 
-    override suspend fun handle(query: GetCameraBodiesByMountTypeQuery): GetCameraBodiesByMountTypeQueryResult {
+    override suspend fun handle(query: GetCameraBodiesByMountTypeQuery): Result<GetCameraBodiesByMountTypeQueryResult> {
         logger.d { "Handling GetCameraBodiesByMountTypeQuery with mountType: ${query.mountType}" }
 
         return when (val result = cameraBodyRepository.getByMountTypeAsync(query.mountType)) {
             is Result.Success -> {
                 logger.i { "Retrieved ${result.data.size} camera bodies for mountType: ${query.mountType}" }
-                GetCameraBodiesByMountTypeQueryResult(
-                    cameraBodies = result.data,
-                    isSuccess = true
+                Result.success(
+                    GetCameraBodiesByMountTypeQueryResult(
+                        cameraBodies = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to get camera bodies by mount type: ${query.mountType} - ${result.error}" }
-                GetCameraBodiesByMountTypeQueryResult(
-                    cameraBodies = emptyList(),
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    GetCameraBodiesByMountTypeQueryResult(
+                        cameraBodies = emptyList(),
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }

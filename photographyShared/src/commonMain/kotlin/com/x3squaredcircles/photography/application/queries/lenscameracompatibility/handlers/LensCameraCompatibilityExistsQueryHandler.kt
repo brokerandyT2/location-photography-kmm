@@ -13,23 +13,27 @@ class LensCameraCompatibilityExistsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<LensCameraCompatibilityExistsQuery, LensCameraCompatibilityExistsQueryResult> {
 
-    override suspend fun handle(query: LensCameraCompatibilityExistsQuery): LensCameraCompatibilityExistsQueryResult {
+    override suspend fun handle(query: LensCameraCompatibilityExistsQuery): Result<LensCameraCompatibilityExistsQueryResult> {
         logger.d { "Handling LensCameraCompatibilityExistsQuery with lensId: ${query.lensId}, cameraBodyId: ${query.cameraBodyId}" }
 
         return when (val result = lensCameraCompatibilityRepository.existsAsync(query.lensId, query.cameraBodyId)) {
             is Result.Success -> {
                 logger.i { "Lens camera compatibility exists check for lensId: ${query.lensId}, cameraBodyId: ${query.cameraBodyId} - exists: ${result.data}" }
-                LensCameraCompatibilityExistsQueryResult(
-                    exists = result.data,
-                    isSuccess = true
+                Result.success(
+                    LensCameraCompatibilityExistsQueryResult(
+                        exists = result.data,
+                        isSuccess = true
+                    )
                 )
             }
             is Result.Failure -> {
                 logger.e { "Failed to check lens camera compatibility existence - lensId: ${query.lensId}, cameraBodyId: ${query.cameraBodyId} - ${result.error}" }
-                LensCameraCompatibilityExistsQueryResult(
-                    exists = false,
-                    isSuccess = false,
-                    errorMessage = result.error
+                Result.success(
+                    LensCameraCompatibilityExistsQueryResult(
+                        exists = false,
+                        isSuccess = false,
+                        errorMessage = result.error
+                    )
                 )
             }
         }
