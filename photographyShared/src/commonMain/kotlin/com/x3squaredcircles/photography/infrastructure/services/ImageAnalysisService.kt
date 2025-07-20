@@ -3,7 +3,7 @@ package com.x3squaredcircles.photography.infrastructure.services
 
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
-import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
+
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
