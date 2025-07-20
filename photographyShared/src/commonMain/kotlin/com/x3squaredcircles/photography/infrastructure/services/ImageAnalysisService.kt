@@ -3,6 +3,8 @@ package com.x3squaredcircles.photography.infrastructure.services
 
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
+import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
+import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,7 +15,6 @@ class ImageAnalysisService(
 ) : IImageAnalysisService {
 
     private val histogramCache = mutableMapOf<String, String>()
-    private val outputDirectory = getOutputDirectory()
     private val platformImageProcessor = createPlatformImageProcessor()
 
     override suspend fun analyzeImageAsync(imagePath: String): Result<ImageAnalysisData> {
@@ -55,7 +56,7 @@ class ImageAnalysisService(
 
             withContext(Dispatchers.Default) {
                 val outputPath = platformImageProcessor.generateHistogramImage(
-                    histogram, color, fileName, outputDirectory
+                    histogram, color, fileName, getOutputDirectory()
                 )
 
                 if (outputPath.isNotEmpty()) {
@@ -90,7 +91,7 @@ class ImageAnalysisService(
 
             withContext(Dispatchers.Default) {
                 val outputPath = platformImageProcessor.generateStackedHistogramImage(
-                    redHistogram, greenHistogram, blueHistogram, luminanceHistogram, fileName, outputDirectory
+                    redHistogram, greenHistogram, blueHistogram, luminanceHistogram, fileName, getOutputDirectory()
                 )
 
                 if (outputPath.isNotEmpty()) {
@@ -129,17 +130,26 @@ class ImageAnalysisService(
     }
 
     private fun getOutputDirectory(): String {
-        // Platform-specific implementation needed
-        return "histograms/${Clock.System.now().toEpochMilliseconds()}"
+        return "histograms"
     }
 
     private fun imageExists(path: String): Boolean {
-        // Platform-specific implementation needed
-        return true
+        return try {
+            val file = java.io.File(path)
+            file.exists() && file.isFile
+        } catch (ex: Exception) {
+            logger.w(ex) { "Error checking image existence: $path" }
+            false
+        }
     }
 
     private fun fileExists(path: String): Boolean {
-        // Platform-specific implementation needed
-        return true
+        return try {
+            val file = java.io.File(path)
+            file.exists() && file.isFile
+        } catch (ex: Exception) {
+            logger.w(ex) { "Error checking file existence: $path" }
+            false
+        }
     }
 }

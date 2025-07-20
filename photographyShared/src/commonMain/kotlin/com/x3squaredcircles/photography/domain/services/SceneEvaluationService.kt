@@ -217,6 +217,3 @@ data class ImageAnalysisData(
     }
 }
 
-enum class HistogramColor {
-    RED, GREEN, BLUE, LUMINANCE
-}

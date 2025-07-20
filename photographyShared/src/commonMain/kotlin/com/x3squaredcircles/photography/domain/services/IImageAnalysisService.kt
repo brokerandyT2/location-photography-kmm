@@ -2,19 +2,60 @@
 package com.x3squaredcircles.photography.domain.services
 
 import com.x3squaredcircles.core.domain.common.Result
-import com.x3squaredcircles.photography.domain.models.ImageAnalysisResult
-import com.x3squaredcircles.photography.domain.models.ColorAnalysis
-import com.x3squaredcircles.photography.domain.models.CompositionAnalysis
 
 interface IImageAnalysisService {
 
-    suspend fun analyzeImageAsync(imagePath: String): Result<ImageAnalysisResult>
+    suspend fun analyzeImageAsync(imagePath: String): Result<ImageAnalysisData>
 
-    suspend fun analyzeColorAsync(imagePath: String): Result<ColorAnalysis>
+    suspend fun generateHistogramImageAsync(
+        histogram: DoubleArray,
+        color: HistogramColor,
+        fileName: String
+    ): String
 
-    suspend fun analyzeCompositionAsync(imagePath: String): Result<CompositionAnalysis>
+    suspend fun generateStackedHistogramImageAsync(
+        redHistogram: DoubleArray,
+        greenHistogram: DoubleArray,
+        blueHistogram: DoubleArray,
+        luminanceHistogram: DoubleArray,
+        fileName: String
+    ): String
 
-    suspend fun detectObjectsAsync(imagePath: String): Result<List<String>>
+    fun clearHistogramCache()
+}
 
-    suspend fun calculateImageQualityScoreAsync(imagePath: String): Result<Double>
+data class ImageAnalysisData(
+    val redHistogram: DoubleArray,
+    val greenHistogram: DoubleArray,
+    val blueHistogram: DoubleArray,
+    val luminanceHistogram: DoubleArray,
+    val totalPixels: Long
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as ImageAnalysisData
+
+        if (!redHistogram.contentEquals(other.redHistogram)) return false
+        if (!greenHistogram.contentEquals(other.greenHistogram)) return false
+        if (!blueHistogram.contentEquals(other.blueHistogram)) return false
+        if (!luminanceHistogram.contentEquals(other.luminanceHistogram)) return false
+        if (totalPixels != other.totalPixels) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = redHistogram.contentHashCode()
+        result = 31 * result + greenHistogram.contentHashCode()
+        result = 31 * result + blueHistogram.contentHashCode()
+        result = 31 * result + luminanceHistogram.contentHashCode()
+        result = 31 * result + totalPixels.hashCode()
+        return result
+    }
+}
+
+enum class HistogramColor {
+    RED, GREEN, BLUE, LUMINANCE
 }
