@@ -11,13 +11,3 @@ data class GetAllCameraBodiesQueryResult(
     val errorMessage: String? = null
 )
 
-data class CameraBodyDto(
-    val id: Int,
-    val name: String,
-    val sensorType: String,
-    val sensorWidth: Double,
-    val sensorHeight: Double,
-    val mountType: String,
-    val isUserCreated: Boolean,
-    val dateAdded: Long
-)

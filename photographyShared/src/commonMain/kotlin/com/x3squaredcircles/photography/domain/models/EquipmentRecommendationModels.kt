@@ -74,14 +74,7 @@ data class GenericEquipmentRecommendation(
 )
 
 // Data transfer objects referenced in combinations
-data class CameraBodyDto(
-    val id: Int,
-    val model: String,
-    val manufacturer: String,
-    val sensorWidth: Double,
-    val sensorHeight: Double,
-    val isUserCreated: Boolean = false
-)
+
 
 data class LensDto(
     val id: Int,
