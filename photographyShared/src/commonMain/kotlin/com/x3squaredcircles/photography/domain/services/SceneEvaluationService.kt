@@ -7,6 +7,8 @@ import com.x3squaredcircles.photography.domain.models.SceneEvaluationStatsDto
 import com.x3squaredcircles.photography.domain.services.ISceneEvaluationService
 import com.x3squaredcircles.photography.domain.services.ICameraService
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
+import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
+import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,14 +24,12 @@ class SceneEvaluationService(
         return try {
             logger.d { "Starting scene evaluation - capturing current scene" }
 
-            // Step 1: Capture image from camera
             val captureResult = cameraService.captureImageAsync()
             when (captureResult) {
                 is Result.Success -> {
                     val imagePath = captureResult.data
                     logger.i { "Successfully captured scene image: $imagePath" }
 
-                    // Step 2: Analyze the captured image
                     analyzeImageAsync(imagePath)
                 }
                 is Result.Failure -> {
@@ -55,7 +55,6 @@ class SceneEvaluationService(
                 return Result.failure("Invalid image file or unsupported format")
             }
 
-            // Perform image analysis on background thread
             val analysisResult = withContext(Dispatchers.Default) {
                 performImageAnalysis(imagePath)
             }
@@ -78,7 +77,6 @@ class SceneEvaluationService(
 
     private suspend fun performImageAnalysis(imagePath: String): Result<SceneEvaluationResultDto> {
         return try {
-            // Step 1: Load and analyze the image
             val imageAnalysisResult = imageAnalysisService.analyzeImageAsync(imagePath)
             when (imageAnalysisResult) {
                 is Result.Failure -> {
@@ -87,7 +85,6 @@ class SceneEvaluationService(
                 is Result.Success -> {
                     val analysisData = imageAnalysisResult.data
 
-                    // Step 2: Generate histogram images
                     val timestamp = Clock.System.now().toEpochMilliseconds()
                     val baseFileName = "histogram_${timestamp}"
 
@@ -115,10 +112,8 @@ class SceneEvaluationService(
                         "${baseFileName}_contrast"
                     )
 
-                    // Step 3: Calculate statistics
                     val stats = calculateStatistics(analysisData)
 
-                    // Step 4: Create result
                     val result = SceneEvaluationResultDto(
                         redHistogramPath = redHistogramPath,
                         greenHistogramPath = greenHistogramPath,
@@ -161,7 +156,7 @@ class SceneEvaluationService(
             stdDevGreen = analysisData.greenHistogram.calculateStandardDeviation(),
             stdDevBlue = analysisData.blueHistogram.calculateStandardDeviation(),
             stdDevContrast = analysisData.luminanceHistogram.calculateStandardDeviation(),
-            totalPixels = (analysisData.totalPixels)
+            totalPixels = analysisData.totalPixels
         )
     }
 
@@ -171,7 +166,6 @@ class SceneEvaluationService(
         return validExtensions.contains(extension)
     }
 
-    // Extension functions for histogram calculations
     private fun DoubleArray.calculateMean(): Double {
         return if (isEmpty()) 0.0 else sum() / size
     }
@@ -183,37 +177,3 @@ class SceneEvaluationService(
         return kotlin.math.sqrt(variance)
     }
 }
-
-// Supporting data classes and enums
-data class ImageAnalysisData(
-    val redHistogram: DoubleArray,
-    val greenHistogram: DoubleArray,
-    val blueHistogram: DoubleArray,
-    val luminanceHistogram: DoubleArray,
-    val totalPixels: Int
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || this::class != other::class) return false
-
-        other as ImageAnalysisData
-
-        if (!redHistogram.contentEquals(other.redHistogram)) return false
-        if (!greenHistogram.contentEquals(other.greenHistogram)) return false
-        if (!blueHistogram.contentEquals(other.blueHistogram)) return false
-        if (!luminanceHistogram.contentEquals(other.luminanceHistogram)) return false
-        if (totalPixels != other.totalPixels) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = redHistogram.contentHashCode()
-        result = 31 * result + greenHistogram.contentHashCode()
-        result = 31 * result + blueHistogram.contentHashCode()
-        result = 31 * result + luminanceHistogram.contentHashCode()
-        result = 31 * result + totalPixels
-        return result
-    }
-}
-

@@ -7,14 +7,20 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
+import com.x3squaredcircles.photography.domain.services.HistogramColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
 
+actual fun createPlatformImageProcessor(): PlatformImageProcessor {
+    return PlatformImageProcessor(null)
+}
+
 actual class PlatformImageProcessor(
-    private val context: Context
+    private val context: Context?
 ) {
     actual suspend fun loadImageFromPath(imagePath: String): PlatformImage? {
         return withContext(Dispatchers.IO) {
@@ -41,7 +47,6 @@ actual class PlatformImageProcessor(
             val blueHistogram = DoubleArray(256) { 0.0 }
             val luminanceHistogram = DoubleArray(256) { 0.0 }
 
-            // Extract pixel data and build histograms
             for (x in 0 until width) {
                 for (y in 0 until height) {
                     val pixel = bitmap.getPixel(x, y)
@@ -50,7 +55,6 @@ actual class PlatformImageProcessor(
                     val green = Color.green(pixel)
                     val blue = Color.blue(pixel)
 
-                    // Calculate luminance using standard formula
                     val luminance = (0.299 * red + 0.587 * green + 0.114 * blue).toInt().coerceIn(0, 255)
 
                     redHistogram[red] += 1.0
@@ -60,7 +64,6 @@ actual class PlatformImageProcessor(
                 }
             }
 
-            // Normalize histograms
             for (i in 0..255) {
                 redHistogram[i] = redHistogram[i] / totalPixels
                 greenHistogram[i] = greenHistogram[i] / totalPixels
@@ -73,7 +76,7 @@ actual class PlatformImageProcessor(
                 greenHistogram = greenHistogram,
                 blueHistogram = blueHistogram,
                 luminanceHistogram = luminanceHistogram,
-                totalPixels = totalPixels
+                totalPixels = totalPixels.toLong()
             )
         }
     }
@@ -84,41 +87,35 @@ actual class PlatformImageProcessor(
         fileName: String,
         outputDir: String
     ): String {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             try {
                 val width = 512
-                val height = 256
-
+                val height = 300
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
 
-                // Clear background
                 canvas.drawColor(Color.BLACK)
 
+                val maxValue = histogram.maxOrNull() ?: 0.0
+                val barWidth = width.toFloat() / 256
+
                 val paint = Paint().apply {
-                    strokeWidth = 2f
-                    style = Paint.Style.STROKE
-                    color = when (color) {
-                        HistogramColor.RED -> Color.RED
-                        HistogramColor.GREEN -> Color.GREEN
-                        HistogramColor.BLUE -> Color.BLUE
-                        HistogramColor.LUMINANCE -> Color.WHITE
+                    when (color) {
+                        HistogramColor.RED -> this.color = Color.RED
+                        HistogramColor.GREEN -> this.color = Color.GREEN
+                        HistogramColor.BLUE -> this.color = Color.BLUE
+                        HistogramColor.LUMINANCE -> this.color = Color.WHITE
                     }
+                    strokeWidth = 1f
                 }
 
-                // Find max value for scaling
-                val maxValue = histogram.maxOrNull() ?: 1.0
-
-                // Draw histogram bars
-                val barWidth = width.toFloat() / 256
                 for (i in 0..255) {
-                    val barHeight = ((histogram[i] / maxValue) * height).toFloat()
                     val x = i * barWidth
+                    val barHeight = ((histogram[i] / maxValue) * height).toFloat()
                     canvas.drawLine(x, height.toFloat(), x, height - barHeight, paint)
                 }
 
-                // Save to file
-                val outputFile = File(context.cacheDir, "$outputDir/$fileName.png")
+                val outputFile = File(context?.cacheDir ?: File("."), "$outputDir/$fileName.png")
                 outputFile.parentFile?.mkdirs()
 
                 FileOutputStream(outputFile).use { out ->
@@ -140,18 +137,15 @@ actual class PlatformImageProcessor(
         fileName: String,
         outputDir: String
     ): String {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             try {
                 val width = 512
-                val height = 256
-
+                val height = 300
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
 
-                // Clear background
                 canvas.drawColor(Color.BLACK)
 
-                // Find global max for consistent scaling
                 val maxValue = max(
                     max(redHistogram.maxOrNull() ?: 0.0, greenHistogram.maxOrNull() ?: 0.0),
                     max(blueHistogram.maxOrNull() ?: 0.0, luminanceHistogram.maxOrNull() ?: 0.0)
@@ -159,7 +153,6 @@ actual class PlatformImageProcessor(
 
                 val barWidth = width.toFloat() / 256
 
-                // Draw each histogram with transparency
                 val redPaint = Paint().apply { color = Color.argb(128, 255, 0, 0); strokeWidth = 1f }
                 val greenPaint = Paint().apply { color = Color.argb(128, 0, 255, 0); strokeWidth = 1f }
                 val bluePaint = Paint().apply { color = Color.argb(128, 0, 0, 255); strokeWidth = 1f }
@@ -179,8 +172,7 @@ actual class PlatformImageProcessor(
                     canvas.drawLine(x, height.toFloat(), x, height - lumHeight, lumPaint)
                 }
 
-                // Save to file
-                val outputFile = File(context.cacheDir, "$outputDir/$fileName.png")
+                val outputFile = File(context?.cacheDir ?: File("."), "$outputDir/$fileName.png")
                 outputFile.parentFile?.mkdirs()
 
                 FileOutputStream(outputFile).use { out ->
