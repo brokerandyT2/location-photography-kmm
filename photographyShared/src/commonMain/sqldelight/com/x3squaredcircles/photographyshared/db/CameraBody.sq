@@ -57,3 +57,9 @@ SELECT COUNT(*) FROM CameraBody;
 getCountByMountType:
 SELECT mountType, COUNT(*)
 FROM CameraBody;
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+changes:
+SELECT changes();

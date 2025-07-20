@@ -18,14 +18,7 @@ kotlin {
     }
     
     // JVM target for desktop development
-    jvm("desktop") {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
-        }
-    }
-    
+
     // iOS targets only on macOS
     // Uncomment when building on macOS:
     // iosX64()
@@ -92,19 +85,7 @@ kotlin {
             }
         }
         
-        val desktopMain by getting {
-            dependencies {
-                // Desktop SQLDelight driver
-                implementation("app.cash.sqldelight:sqlite-driver:2.0.0")
-            }
-        }
         
-        val desktopTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-                implementation("app.cash.sqldelight:sqlite-driver:2.0.0")
-            }
-        }
         
         // iOS sourcesets only on macOS
         // Uncomment when building on macOS:

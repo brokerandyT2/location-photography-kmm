@@ -39,10 +39,8 @@ class CameraBodyRepository(
 
     override suspend fun getPagedAsync(pageSize: Int, offset: Int): Result<List<CameraBodyDto>> {
         return executeWithExceptionMapping("GetPaged") {
-            database.cameraBodyQueries.selectAll()
+            database.cameraBodyQueries.selectPaged(pageSize.toLong(), offset.toLong())
                 .executeAsList()
-                .drop(offset)
-                .take(pageSize)
                 .map { mapToDto(it) }
         }
     }
@@ -65,9 +63,8 @@ class CameraBodyRepository(
 
     override suspend fun searchByNameAsync(searchTerm: String): Result<List<CameraBodyDto>> {
         return executeWithExceptionMapping("SearchByName") {
-            database.cameraBodyQueries.selectAll()
+            database.cameraBodyQueries.selectByName(searchTerm, searchTerm, searchTerm)
                 .executeAsList()
-                .filter { it.name.contains(searchTerm, ignoreCase = true) }
                 .map { mapToDto(it) }
         }
     }
@@ -76,13 +73,12 @@ class CameraBodyRepository(
         return executeWithExceptionMapping("Create") {
             database.cameraBodyQueries.insert(
                 name = cameraBody.name,
-                brand = cameraBody.brand,
+                sensorType = cameraBody.sensorType,
+                sensorWidth = cameraBody.sensorWidth,
+                sensorHeight = cameraBody.sensorHeight,
                 mountType = cameraBody.mountType,
-                sensorFormat = cameraBody.sensorFormat,
-                megapixels = cameraBody.megapixels,
-                isoRange = cameraBody.isoRange,
-                shutterSpeedRange = cameraBody.shutterSpeedRange,
-                isUserCreated = if (cameraBody.isUserCreated) 1L else 0L
+                isUserCreated = if (cameraBody.isUserCreated) 1L else 0L,
+                dateAdded = cameraBody.dateAdded
             )
 
             val id = database.cameraBodyQueries.lastInsertRowId().executeAsOne()
@@ -97,13 +93,10 @@ class CameraBodyRepository(
         return executeWithExceptionMapping("Update") {
             database.cameraBodyQueries.update(
                 name = cameraBody.name,
-                brand = cameraBody.brand,
+                sensorType = cameraBody.sensorType,
+                sensorWidth = cameraBody.sensorWidth,
+                sensorHeight = cameraBody.sensorHeight,
                 mountType = cameraBody.mountType,
-                sensorFormat = cameraBody.sensorFormat,
-                megapixels = cameraBody.megapixels,
-                isoRange = cameraBody.isoRange,
-                shutterSpeedRange = cameraBody.shutterSpeedRange,
-                isUserCreated = if (cameraBody.isUserCreated) 1L else 0L,
                 id = cameraBody.id.toLong()
             )
             val rowsAffected = database.cameraBodyQueries.changes().executeAsOne()
@@ -131,15 +124,13 @@ class CameraBodyRepository(
 
     override suspend fun getTotalCountAsync(): Result<Long> {
         return executeWithExceptionMapping("GetTotalCount") {
-            database.cameraBodyQueries.getCount().executeAsOne()
+            database.cameraBodyQueries.getTotalCount().executeAsOne()
         }
     }
 
     override suspend fun existsByNameAsync(name: String, excludeId: Int): Result<Boolean> {
         return executeWithExceptionMapping("ExistsByName") {
-            database.cameraBodyQueries.selectAll()
-                .executeAsList()
-                .any { it.name == name && it.id.toInt() != excludeId }
+            database.cameraBodyQueries.existsByName(name, excludeId.toLong()).executeAsOne()
         }
     }
 
@@ -153,13 +144,12 @@ class CameraBodyRepository(
                 for (cameraBody in cameraBodies) {
                     database.cameraBodyQueries.insert(
                         name = cameraBody.name,
-                        brand = cameraBody.brand,
+                        sensorType = cameraBody.sensorType,
+                        sensorWidth = cameraBody.sensorWidth,
+                        sensorHeight = cameraBody.sensorHeight,
                         mountType = cameraBody.mountType,
-                        sensorFormat = cameraBody.sensorFormat,
-                        megapixels = cameraBody.megapixels,
-                        isoRange = cameraBody.isoRange,
-                        shutterSpeedRange = cameraBody.shutterSpeedRange,
-                        isUserCreated = if (cameraBody.isUserCreated) 1L else 0L
+                        isUserCreated = if (cameraBody.isUserCreated) 1L else 0L,
+                        dateAdded = cameraBody.dateAdded
                     )
 
                     val id = database.cameraBodyQueries.lastInsertRowId().executeAsOne()
@@ -183,13 +173,10 @@ class CameraBodyRepository(
                 for (cameraBody in cameraBodies) {
                     database.cameraBodyQueries.update(
                         name = cameraBody.name,
-                        brand = cameraBody.brand,
+                        sensorType = cameraBody.sensorType,
+                        sensorWidth = cameraBody.sensorWidth,
+                        sensorHeight = cameraBody.sensorHeight,
                         mountType = cameraBody.mountType,
-                        sensorFormat = cameraBody.sensorFormat,
-                        megapixels = cameraBody.megapixels,
-                        isoRange = cameraBody.isoRange,
-                        shutterSpeedRange = cameraBody.shutterSpeedRange,
-                        isUserCreated = if (cameraBody.isUserCreated) 1L else 0L,
                         id = cameraBody.id.toLong()
                     )
                     val rowsAffected = database.cameraBodyQueries.changes().executeAsOne()
@@ -251,13 +238,13 @@ class CameraBodyRepository(
         return CameraBodyDto(
             id = entity.id.toInt(),
             name = entity.name,
-            brand = entity.brand,
+            sensorType = entity.sensorType,
+            sensorWidth = entity.sensorWidth,
+            sensorHeight = entity.sensorHeight,
             mountType = entity.mountType,
-            sensorFormat = entity.sensorFormat,
-            megapixels = entity.megapixels,
-            isoRange = entity.isoRange,
-            shutterSpeedRange = entity.shutterSpeedRange,
-            isUserCreated = entity.isUserCreated == 1L
+            isUserCreated = entity.isUserCreated == 1L,
+            dateAdded = entity.dateAdded,
+            displayName = if (entity.isUserCreated == 1L) "${entity.name}*" else entity.name
         )
     }
 
@@ -270,8 +257,7 @@ class CameraBodyRepository(
             Result.success(result)
         } catch (ex: Exception) {
             logger.e(ex) { "Repository operation $operationName failed for camera body" }
-            val mappedException = exceptionMapper.mapToCameraBodyDomainException(ex, operationName)
-            Result.failure(mappedException.message ?: "Unknown error", mappedException)
+            Result.failure("$operationName failed: ${ex.message}", ex)
         }
     }
 

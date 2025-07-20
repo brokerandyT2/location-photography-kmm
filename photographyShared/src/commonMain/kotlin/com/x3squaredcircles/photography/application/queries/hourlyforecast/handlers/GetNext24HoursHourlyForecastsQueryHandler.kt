@@ -14,7 +14,7 @@ class GetNext24HoursHourlyForecastsQueryHandler(
     private val logger: Logger
 ) : IQueryHandler<GetNext24HoursHourlyForecastsQuery, GetNext24HoursHourlyForecastsQueryResult> {
 
-    override suspend fun handle(query: GetNext24HoursHourlyForecastsQuery): GetNext24HoursHourlyForecastsQueryResult {
+    override suspend fun handle(query: GetNext24HoursHourlyForecastsQuery): Result<GetNext24HoursHourlyForecastsQueryResult> {
         logger.d { "Handling GetNext24HoursHourlyForecastsQuery with weatherId: ${query.weatherId}, startTime: ${query.startTime}" }
 
         return try {
@@ -23,26 +23,32 @@ class GetNext24HoursHourlyForecastsQueryHandler(
             when (val result = hourlyForecastRepository.getNext24HoursAsync(query.weatherId, startTime)) {
                 is Result.Success -> {
                     logger.i { "Retrieved ${result.data.size} hourly forecasts for next 24 hours - weatherId: ${query.weatherId}" }
-                    GetNext24HoursHourlyForecastsQueryResult(
-                        hourlyForecasts = result.data,
-                        isSuccess = true
+                    Result.success(
+                        GetNext24HoursHourlyForecastsQueryResult(
+                            hourlyForecasts = result.data,
+                            isSuccess = true
+                        )
                     )
                 }
                 is Result.Failure -> {
                     logger.e { "Failed to get next 24 hours hourly forecasts - weatherId: ${query.weatherId} - ${result.error}" }
-                    GetNext24HoursHourlyForecastsQueryResult(
-                        hourlyForecasts = emptyList(),
-                        isSuccess = false,
-                        errorMessage = result.error
+                    Result.success(
+                        GetNext24HoursHourlyForecastsQueryResult(
+                            hourlyForecasts = emptyList(),
+                            isSuccess = false,
+                            errorMessage = result.error
+                        )
                     )
                 }
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to create start time or get next 24 hours hourly forecasts - weatherId: ${query.weatherId}" }
-            GetNext24HoursHourlyForecastsQueryResult(
-                hourlyForecasts = emptyList(),
-                isSuccess = false,
-                errorMessage = ex.message ?: "Unknown error occurred"
+            Result.success(
+                GetNext24HoursHourlyForecastsQueryResult(
+                    hourlyForecasts = emptyList(),
+                    isSuccess = false,
+                    errorMessage = ex.message ?: "Unknown error occurred"
+                )
             )
         }
     }

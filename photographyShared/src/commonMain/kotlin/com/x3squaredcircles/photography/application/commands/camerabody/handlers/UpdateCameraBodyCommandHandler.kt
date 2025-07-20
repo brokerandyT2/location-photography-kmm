@@ -2,7 +2,7 @@
 package com.x3squaredcircles.photography.application.commands.camerabody.handlers
 
 import com.x3squaredcircles.photography.application.commands.camerabody.UpdateCameraBodyCommand
-
+import com.x3squaredcircles.photography.application.commands.camerabody.UpdateCameraBodyCommandResult
 import com.x3squaredcircles.photography.application.commands.ICommandHandler
 import com.x3squaredcircles.photography.application.queries.camerabody.CameraBodyDto
 import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.ICameraBodyRepository

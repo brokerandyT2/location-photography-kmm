@@ -54,10 +54,19 @@ class SubscriptionService(
             )
 
             val result = withContext(Dispatchers.Default) {
-                subscriptionRepository.addAsync(subscriptionDto)
+                subscriptionRepository.createAsync(subscriptionDto)
             }
 
-            Result.success(true)
+            when (result) {
+                is Result.Success -> {
+                    logger.i { "Successfully stored subscription" }
+                    Result.success(true)
+                }
+                is Result.Failure -> {
+                    logger.e { "Failed to store subscription: ${result.error}" }
+                    Result.failure("Failed to store subscription data")
+                }
+            }
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to store subscription" }
             Result.failure("Failed to store subscription data")
@@ -73,30 +82,38 @@ class SubscriptionService(
                 subscriptionRepository.getActiveByUserIdAsync(userId, currentTime)
             }
 
-            val subscription = statusResult
-            if (subscription == null) {
-                return Result.success(SubscriptionStatusDto())
+            when (statusResult) {
+                is Result.Success -> {
+                    val subscription = statusResult.data
+                    if (subscription == null) {
+                        return Result.success(SubscriptionStatusDto())
+                    }
+
+                    val now = Clock.System.now().toEpochMilliseconds()
+                    val isExpired = subscription.expirationDate < now
+                    val daysUntilExpiration = if (!isExpired) {
+                        ((subscription.expirationDate - now) / (24 * 60 * 60 * 1000)).toInt()
+                    } else 0
+
+                    val status = SubscriptionStatusDto(
+                        hasActiveSubscription = !isExpired && subscription.isActive,
+                        productId = subscription.productId,
+                        status = if (isExpired) com.x3squaredcircles.photography.domain.models.SubscriptionStatus.EXPIRED
+                        else com.x3squaredcircles.photography.domain.models.SubscriptionStatus.ACTIVE,
+                        expirationDate = kotlinx.datetime.Instant.fromEpochMilliseconds(subscription.expirationDate),
+                        purchaseDate = kotlinx.datetime.Instant.fromEpochMilliseconds(subscription.purchaseDate),
+                        period = com.x3squaredcircles.photography.domain.models.SubscriptionPeriod.MONTHLY, // Default, determine from productId
+                        isExpiringSoon = daysUntilExpiration <= 7 && daysUntilExpiration > 0,
+                        daysUntilExpiration = daysUntilExpiration
+                    )
+
+                    Result.success(status)
+                }
+                is Result.Failure -> {
+                    logger.e { "Failed to get subscription status: ${statusResult.error}" }
+                    Result.failure("Failed to retrieve subscription status")
+                }
             }
-
-            val now = Clock.System.now().toEpochMilliseconds()
-            val isExpired = subscription.expirationDate < now
-            val daysUntilExpiration = if (!isExpired) {
-                ((subscription.expirationDate - now) / (24 * 60 * 60 * 1000)).toInt()
-            } else 0
-
-            val status = SubscriptionStatusDto(
-                hasActiveSubscription = !isExpired && subscription.isActive,
-                productId = subscription.productId,
-                status = if (isExpired) com.x3squaredcircles.photography.domain.models.SubscriptionStatus.EXPIRED
-                else com.x3squaredcircles.photography.domain.models.SubscriptionStatus.ACTIVE,
-                expirationDate = kotlinx.datetime.Instant.fromEpochMilliseconds(subscription.expirationDate),
-                purchaseDate = kotlinx.datetime.Instant.fromEpochMilliseconds(subscription.purchaseDate),
-                period = com.x3squaredcircles.photography.domain.models.SubscriptionPeriod.MONTHLY, // Default, determine from productId
-                isExpiringSoon = daysUntilExpiration <= 7 && daysUntilExpiration > 0,
-                daysUntilExpiration = daysUntilExpiration
-            )
-
-            Result.success(status)
         } catch (ex: Exception) {
             logger.e(ex) { "Failed to get subscription status" }
             Result.failure("Failed to retrieve subscription status")

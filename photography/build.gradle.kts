@@ -17,13 +17,7 @@ kotlin {
     }
     
     // JVM target for desktop development
-    jvm("desktop") {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
-        }
-    }
+
     
     // iOS targets only on macOS
     // Uncomment when building on macOS:
@@ -101,17 +95,7 @@ kotlin {
             }
         }
         
-        val desktopMain by getting {
-            dependencies {
-                // Desktop-specific dependencies if needed
-            }
-        }
-        
-        val desktopTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-            }
-        }
+
         
         // iOS sourcesets only on macOS
         // Uncomment when building on macOS:
