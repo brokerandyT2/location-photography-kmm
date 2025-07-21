@@ -1,9 +1,13 @@
+// photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/application/queries/subscription/handlers/GetSubscriptionStatusQueryHandler.kt
 package com.x3squaredcircles.photography.application.queries.subscription.handlers
 
 import com.x3squaredcircles.photography.application.queries.subscription.GetSubscriptionStatusQuery
 import com.x3squaredcircles.photography.application.queries.subscription.GetSubscriptionStatusQueryResult
 import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.domain.services.ISubscriptionService
+import com.x3squaredcircles.photography.domain.models.SubscriptionStatusDto
+import com.x3squaredcircles.photography.domain.models.SubscriptionStatus
+import com.x3squaredcircles.photography.domain.models.SubscriptionPeriod
 import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 
@@ -49,14 +53,14 @@ class GetSubscriptionStatusQueryHandler(
         }
     }
 
-    private fun createDefaultSubscriptionStatus(): com.x3squaredcircles.photography.domain.models.SubscriptionStatusDto {
-        return com.x3squaredcircles.photography.domain.models.SubscriptionStatusDto(
+    private fun createDefaultSubscriptionStatus(): SubscriptionStatusDto {
+        return SubscriptionStatusDto(
             hasActiveSubscription = false,
             productId = "",
-            status = com.x3squaredcircles.photography.domain.enums.SubscriptionStatus.INACTIVE,
+            status = SubscriptionStatus.NONE,
             expirationDate = null,
             purchaseDate = null,
-            period = com.x3squaredcircles.photography.domain.enums.SubscriptionPeriod.MONTHLY,
+            period = SubscriptionPeriod.NONE,
             isExpiringSoon = false,
             daysUntilExpiration = 0
         )
