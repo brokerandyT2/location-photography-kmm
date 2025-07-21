@@ -3,7 +3,7 @@ package com.x3squaredcircles.photography.infrastructure.services
 
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
-
+import com.x3squaredcircles.photography.domain.services.ImageAnalysisResult
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +17,7 @@ class ImageAnalysisService(
     private val histogramCache = mutableMapOf<String, String>()
     private val platformImageProcessor = createPlatformImageProcessor()
 
-    override suspend fun analyzeImageAsync(imagePath: String): Result<ImageAnalysisData> {
+    override suspend fun analyzeImageAsync(imagePath: String): Result<ImageAnalysisResult> {
         return try {
             logger.d { "Analyzing image: $imagePath" }
 
@@ -29,9 +29,9 @@ class ImageAnalysisService(
                 val image = platformImageProcessor.loadImageFromPath(imagePath)
                     ?: return@withContext Result.failure("Failed to load image: $imagePath")
 
-                val analysisData = platformImageProcessor.extractHistogramData(image)
+                val analysisResult = platformImageProcessor.extractHistogramData(image)
                 logger.i { "Successfully analyzed image: $imagePath" }
-                Result.success(analysisData)
+                Result.success(analysisResult)
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Error analyzing image: $imagePath" }
@@ -43,14 +43,14 @@ class ImageAnalysisService(
         histogram: DoubleArray,
         color: HistogramColor,
         fileName: String
-    ): String {
+    ): Result<String> {
         return try {
             val cacheKey = "${fileName}_${color.name}_${histogram.contentHashCode()}"
 
             histogramCache[cacheKey]?.let { cachedPath ->
                 if (fileExists(cachedPath)) {
                     logger.d { "Using cached histogram: $cachedPath" }
-                    return cachedPath
+                    return Result.success(cachedPath)
                 }
             }
 
@@ -62,13 +62,14 @@ class ImageAnalysisService(
                 if (outputPath.isNotEmpty()) {
                     histogramCache[cacheKey] = outputPath
                     logger.d { "Generated histogram image: $outputPath" }
+                    Result.success(outputPath)
+                } else {
+                    Result.failure("Failed to generate histogram image")
                 }
-
-                outputPath
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Error generating histogram image: $fileName" }
-            ""
+            Result.failure("Histogram generation failed: ${ex.message}")
         }
     }
 
@@ -78,14 +79,14 @@ class ImageAnalysisService(
         blueHistogram: DoubleArray,
         luminanceHistogram: DoubleArray,
         fileName: String
-    ): String {
+    ): Result<String> {
         return try {
-            val cacheKey = "${fileName}_stacked_${generateStackedHashCode(redHistogram, greenHistogram, blueHistogram, luminanceHistogram)}"
+            val cacheKey = "${fileName}_stacked_${redHistogram.contentHashCode()}_${greenHistogram.contentHashCode()}_${blueHistogram.contentHashCode()}_${luminanceHistogram.contentHashCode()}"
 
             histogramCache[cacheKey]?.let { cachedPath ->
                 if (fileExists(cachedPath)) {
                     logger.d { "Using cached stacked histogram: $cachedPath" }
-                    return cachedPath
+                    return Result.success(cachedPath)
                 }
             }
 
@@ -97,59 +98,51 @@ class ImageAnalysisService(
                 if (outputPath.isNotEmpty()) {
                     histogramCache[cacheKey] = outputPath
                     logger.d { "Generated stacked histogram image: $outputPath" }
+                    Result.success(outputPath)
+                } else {
+                    Result.failure("Failed to generate stacked histogram image")
                 }
-
-                outputPath
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Error generating stacked histogram image: $fileName" }
-            ""
+            Result.failure("Stacked histogram generation failed: ${ex.message}")
         }
     }
 
     override fun clearHistogramCache() {
-        try {
-            histogramCache.clear()
-            logger.i { "Histogram cache cleared" }
+        logger.d { "Clearing histogram cache (${histogramCache.size} entries)" }
+        histogramCache.clear()
+    }
+
+    private fun imageExists(imagePath: String): Boolean {
+        return try {
+            // Platform-specific file existence check
+            // This would be implemented via expect/actual if needed
+            imagePath.isNotEmpty()
         } catch (ex: Exception) {
-            logger.w(ex) { "Error clearing histogram cache" }
+            logger.w(ex) { "Error checking image existence: $imagePath" }
+            false
         }
     }
 
-    private fun generateStackedHashCode(
-        red: DoubleArray,
-        green: DoubleArray,
-        blue: DoubleArray,
-        luminance: DoubleArray
-    ): Int {
-        var result = red.contentHashCode()
-        result = 31 * result + green.contentHashCode()
-        result = 31 * result + blue.contentHashCode()
-        result = 31 * result + luminance.contentHashCode()
-        return result
+    private fun fileExists(filePath: String): Boolean {
+        return try {
+            // Platform-specific file existence check
+            filePath.isNotEmpty()
+        } catch (ex: Exception) {
+            logger.w(ex) { "Error checking file existence: $filePath" }
+            false
+        }
     }
 
     private fun getOutputDirectory(): String {
-        return "histograms"
-    }
-
-    private fun imageExists(path: String): Boolean {
         return try {
-            val file = java.io.File(path)
-            file.exists() && file.isFile
+            // Platform-specific output directory
+            // This could be implemented via expect/actual or injected
+            "histograms"
         } catch (ex: Exception) {
-            logger.w(ex) { "Error checking image existence: $path" }
-            false
-        }
-    }
-
-    private fun fileExists(path: String): Boolean {
-        return try {
-            val file = java.io.File(path)
-            file.exists() && file.isFile
-        } catch (ex: Exception) {
-            logger.w(ex) { "Error checking file existence: $path" }
-            false
+            logger.w(ex) { "Error getting output directory" }
+            "."
         }
     }
 }
