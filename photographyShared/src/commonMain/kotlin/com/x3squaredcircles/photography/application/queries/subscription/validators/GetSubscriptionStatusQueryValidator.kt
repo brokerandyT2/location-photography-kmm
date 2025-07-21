@@ -4,6 +4,7 @@ package com.x3squaredcircles.photography.application.queries.subscription.valida
 
 import com.x3squaredcircles.photography.application.common.behaviors.IValidator
 import com.x3squaredcircles.photography.application.common.behaviors.ValidationResult
+import com.x3squaredcircles.photography.application.queries.subscription.GetSubscriptionStatusQuery
 
 class GetSubscriptionStatusQueryValidator : IValidator<GetSubscriptionStatusQuery> {
 
