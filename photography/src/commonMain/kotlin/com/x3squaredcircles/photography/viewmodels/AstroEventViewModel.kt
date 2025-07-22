@@ -1,8 +1,8 @@
 // photography/src/commonMain/kotlin/com/x3squaredcircles/photography/viewmodels/AstroEventViewModel.kt
 package com.x3squaredcircles.photography.viewmodels
 
-import com.x3squaredcircles.photography.domain.models.AstroTarget
-
+import com.x3squaredcircles.photography.domain.enums.AstroTarget
+import com.x3squaredcircles.photography.domain.models.AstroCalculationResult
 import com.x3squaredcircles.photography.domain.models.PlanetPositionData
 import com.x3squaredcircles.photography.domain.models.DeepSkyObjectData
 import com.x3squaredcircles.photography.domain.models.MeteorShowerData
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.hours
 
-class AstroEventViewModel : BaseViewModel() {
+class AstroEventViewModel() : BaseViewModel() {
 
     private val _name = MutableStateFlow("")
     val name: StateFlow<String> = _name.asStateFlow()
@@ -63,9 +63,7 @@ class AstroEventViewModel : BaseViewModel() {
     private val _dateFormat = MutableStateFlow("yyyy-MM-dd")
     val dateFormat: StateFlow<String> = _dateFormat.asStateFlow()
 
-    constructor() : super()
-
-    constructor(result: AstroCalculationResult) : super() {
+    constructor(result: AstroCalculationResult) : this() {
         _target.value = result.target
         _name.value = getTargetDisplayName(result.target)
         _startTime.value = result.calculationTime
@@ -79,7 +77,7 @@ class AstroEventViewModel : BaseViewModel() {
         _eventType.value = getEventType(result.target)
     }
 
-    constructor(planetData: PlanetPositionData) : super() {
+    constructor(planetData: PlanetPositionData) : this() {
         _target.value = AstroTarget.Planets
         _name.value = getPlanetDisplayName(planetData.planet)
         _startTime.value = planetData.rise ?: planetData.dateTime
@@ -95,7 +93,7 @@ class AstroEventViewModel : BaseViewModel() {
         _eventType.value = "Planet"
     }
 
-    constructor(dsoData: DeepSkyObjectData) : super() {
+    constructor(dsoData: DeepSkyObjectData) : this() {
         _target.value = AstroTarget.DeepSkyObjects
         _name.value = dsoData.commonName.ifEmpty { dsoData.catalogId }
         _startTime.value = dsoData.dateTime
@@ -112,7 +110,7 @@ class AstroEventViewModel : BaseViewModel() {
         _eventType.value = dsoData.objectType
     }
 
-    constructor(meteorData: MeteorShowerData) : super() {
+    constructor(meteorData: MeteorShowerData) : this() {
         _target.value = AstroTarget.MeteorShowers
         _name.value = meteorData.name
         _startTime.value = meteorData.activityStart
@@ -125,7 +123,7 @@ class AstroEventViewModel : BaseViewModel() {
         _eventType.value = "Meteor Shower"
     }
 
-    constructor(moonData: EnhancedMoonData) : super() {
+    constructor(moonData: EnhancedMoonData) : this() {
         _target.value = AstroTarget.Moon
         _name.value = "Moon (${moonData.phaseName})"
         _startTime.value = moonData.rise ?: moonData.dateTime
@@ -133,11 +131,11 @@ class AstroEventViewModel : BaseViewModel() {
         _peakTime.value = moonData.transit
         _azimuth.value = moonData.azimuth
         _altitude.value = moonData.altitude
-        _magnitude.value = moonData.m
+        _magnitude.value = moonData.opticalLibration
         _angularSize.value = moonData.angularDiameter
-        _isVisible.value = moonData.isVisible
+        _isVisible.value = moonData.azimuth >0
         _description.value = "${moonData.phaseName}, ${moonData.illumination.format(1)}% illuminated"
-        _recommendedEquipment.value = moonData.recommendedEquipment
+        //_recommendedEquipment.value = moonData
         _eventType.value = "Moon Phase"
     }
 
@@ -147,8 +145,7 @@ class AstroEventViewModel : BaseViewModel() {
 
     fun getFormattedTime(): String {
         val time = getOptimalTime()
-        // Simplified formatting - would need proper timezone conversion
-        return time.toString().substring(11, 16) // Extract HH:mm
+        return time.toString().substring(11, 16)
     }
 
     private fun getTargetDisplayName(target: AstroTarget): String {
@@ -171,7 +168,6 @@ class AstroEventViewModel : BaseViewModel() {
     }
 
     private fun getPlanetDisplayName(planet: Any): String {
-        // Implementation would depend on the Planet type structure
         return planet.toString()
     }
 
