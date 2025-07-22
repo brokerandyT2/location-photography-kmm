@@ -16,7 +16,20 @@ enum class AstroTarget {
     LUNAR_ECLIPSE,
     CONJUNCTIONS,
     DEEP_SKY,
-    MILKY_WAY
+    MILKY_WAY,
+    MilkyWayCore,
+    Planets,
+    DeepSkyObjects,
+    MeteorShowers,
+    Moon,
+    M31_Andromeda,
+    M42_Orion,
+    M51_Whirlpool,
+    M13_Hercules,
+    M27_Dumbbell,
+    M57_Ring,
+    M81_Bodes,
+    M104_Sombrero
 }
 
 data class OptimalEquipmentSpecs(
