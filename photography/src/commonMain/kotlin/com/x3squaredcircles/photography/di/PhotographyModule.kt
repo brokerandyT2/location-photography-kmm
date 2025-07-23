@@ -16,7 +16,7 @@ val photographyModule = module {
     factoryOf(::WeatherViewModel)
     factoryOf(::TipsViewModel)
     factoryOf(::SettingViewModel)
-    factoryOf(::AboutViewModel)
+
 
     // Item ViewModels (don't extend BaseViewModel)
     factoryOf(::TipItemViewModel)
@@ -31,12 +31,9 @@ val photographyModule = module {
     // Based on photography app architecture and features
 
     // Main ViewModels
-    factoryOf(::MainViewModel)
-    factoryOf(::CameraViewModel)
-    factoryOf(::SunMoonViewModel)
-    factoryOf(::EquipmentViewModel)
-    factoryOf(::SubscriptionViewModel)
-    factoryOf(::SettingsViewModel)
+
+
+    factoryOf(::SettingViewModel)
 
     // Photography-specific ViewModels
     factoryOf(::ExposureViewModel)
