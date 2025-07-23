@@ -2,6 +2,7 @@
 package com.x3squaredcircles.photography.domain.services
 
 import com.x3squaredcircles.core.domain.common.Result
+import com.x3squaredcircles.photography.domain.models.ImageAnalysisResult
 
 interface IImageAnalysisService {
     suspend fun analyzeImageAsync(imagePath: String): Result<ImageAnalysisResult>
@@ -20,15 +21,7 @@ interface IImageAnalysisService {
     fun clearHistogramCache()
 }
 
-data class ImageAnalysisResult(
-    val redHistogram: HistogramData,
-    val greenHistogram: HistogramData,
-    val blueHistogram: HistogramData,
-    val luminanceHistogram: HistogramData,
-    val whiteBalance: ColorTemperatureData,
-    val contrast: ContrastMetrics,
-    val exposure: ExposureAnalysis
-)
+
 
 data class HistogramData(
     val values: DoubleArray = DoubleArray(256),
@@ -92,32 +85,6 @@ data class ExposureAnalysis(
 
 enum class HistogramColor {
     RED, GREEN, BLUE, LUMINANCE
-}
-
-// Platform-specific bitmap processing
-expect class PlatformImageProcessor {
-    suspend fun loadImage(imagePath: String): PlatformBitmap?
-    suspend fun generateHistogramImage(
-        histogram: DoubleArray,
-        color: HistogramColor,
-        width: Int,
-        height: Int
-    ): ByteArray
-    suspend fun generateStackedHistogramImage(
-        redHistogram: DoubleArray,
-        greenHistogram: DoubleArray,
-        blueHistogram: DoubleArray,
-        luminanceHistogram: DoubleArray,
-        width: Int,
-        height: Int
-    ): ByteArray
-}
-
-// Platform-specific bitmap representation
-expect class PlatformBitmap {
-    val width: Int
-    val height: Int
-    fun getPixel(x: Int, y: Int): PixelColor
 }
 
 data class PixelColor(

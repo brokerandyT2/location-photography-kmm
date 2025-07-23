@@ -7,9 +7,10 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.x3squaredcircles.photography.domain.models.ImageAnalysisData
 
 import com.x3squaredcircles.photography.domain.services.HistogramColor
-import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

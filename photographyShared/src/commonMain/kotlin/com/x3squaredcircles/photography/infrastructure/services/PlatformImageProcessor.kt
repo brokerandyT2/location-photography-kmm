@@ -1,7 +1,7 @@
 // photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/infrastructure/services/PlatformImageProcessor.kt
 package com.x3squaredcircles.photography.infrastructure.services
 
-import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
+import com.x3squaredcircles.photography.domain.models.ImageAnalysisData
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 
 expect fun createPlatformImageProcessor(): PlatformImageProcessor

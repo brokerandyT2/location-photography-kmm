@@ -3,12 +3,19 @@ package com.x3squaredcircles.photography.infrastructure.services
 
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
-import com.x3squaredcircles.photography.domain.services.ImageAnalysisResult
+
+import com.x3squaredcircles.photography.domain.services.HistogramData
+import com.x3squaredcircles.photography.domain.services.HistogramStatistics
+import com.x3squaredcircles.photography.domain.services.ColorTemperatureData
+import com.x3squaredcircles.photography.domain.services.ContrastMetrics
+import com.x3squaredcircles.photography.domain.services.ExposureAnalysis
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
+import com.x3squaredcircles.photography.domain.models.ImageAnalysisResult
+
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 
 class ImageAnalysisService(
     private val logger: Logger
@@ -29,9 +36,12 @@ class ImageAnalysisService(
                 val image = platformImageProcessor.loadImageFromPath(imagePath)
                     ?: return@withContext Result.failure("Failed to load image: $imagePath")
 
-                val analysisResult = platformImageProcessor.extractHistogramData(image)
+                val analysisData = platformImageProcessor.extractHistogramData(image)
+
+                val imageAnalysisResult = convertToImageAnalysisResult(analysisData, imagePath)
+
                 logger.i { "Successfully analyzed image: $imagePath" }
-                Result.success(analysisResult)
+                Result.success(imageAnalysisResult)
             }
         } catch (ex: Exception) {
             logger.e(ex) { "Error analyzing image: $imagePath" }
@@ -114,10 +124,73 @@ class ImageAnalysisService(
         histogramCache.clear()
     }
 
+    private fun convertToImageAnalysisResult(
+        analysisData: com.x3squaredcircles.photography.domain.models.ImageAnalysisData,
+        imagePath: String
+    ): ImageAnalysisResult {
+        return ImageAnalysisResult(
+            redHistogram = HistogramData(
+                values = analysisData.redHistogram,
+                statistics = calculateHistogramStatistics(analysisData.redHistogram),
+                imagePath = imagePath
+            ),
+            greenHistogram = HistogramData(
+                values = analysisData.greenHistogram,
+                statistics = calculateHistogramStatistics(analysisData.greenHistogram),
+                imagePath = imagePath
+            ),
+            blueHistogram = HistogramData(
+                values = analysisData.blueHistogram,
+                statistics = calculateHistogramStatistics(analysisData.blueHistogram),
+                imagePath = imagePath
+            ),
+            luminanceHistogram = HistogramData(
+                values = analysisData.luminanceHistogram,
+                statistics = calculateHistogramStatistics(analysisData.luminanceHistogram),
+                imagePath = imagePath
+            ),
+            whiteBalance = ColorTemperatureData(),
+            contrast = ContrastMetrics(),
+            exposure = ExposureAnalysis()
+        )
+    }
+
+    private fun calculateHistogramStatistics(histogram: DoubleArray): HistogramStatistics {
+        if (histogram.isEmpty()) {
+            return HistogramStatistics()
+        }
+
+        val mean = histogram.sum() / histogram.size
+        val nonZeroValues = histogram.filter { it > 0.0 }
+        val median = if (nonZeroValues.isNotEmpty()) {
+            val sorted = nonZeroValues.sorted()
+            sorted[sorted.size / 2]
+        } else 0.0
+
+        val variance = histogram.map { (it - mean) * (it - mean) }.sum() / histogram.size
+        val standardDeviation = kotlin.math.sqrt(variance)
+
+        val minValue = histogram.minOrNull() ?: 0.0
+        val maxValue = histogram.maxOrNull() ?: 0.0
+        val dynamicRange = maxValue - minValue
+
+        val shadowClipping = histogram.take(10).sum() > 0.1
+        val highlightClipping = histogram.takeLast(10).sum() > 0.1
+
+        return HistogramStatistics(
+            mean = mean,
+            median = median,
+            standardDeviation = standardDeviation,
+            shadowClipping = shadowClipping,
+            highlightClipping = highlightClipping,
+            dynamicRange = dynamicRange,
+            mode = histogram.withIndex().maxByOrNull { it.value }?.index?.toDouble() ?: 0.0,
+            skewness = 0.0
+        )
+    }
+
     private fun imageExists(imagePath: String): Boolean {
         return try {
-            // Platform-specific file existence check
-            // This would be implemented via expect/actual if needed
             imagePath.isNotEmpty()
         } catch (ex: Exception) {
             logger.w(ex) { "Error checking image existence: $imagePath" }
@@ -127,7 +200,6 @@ class ImageAnalysisService(
 
     private fun fileExists(filePath: String): Boolean {
         return try {
-            // Platform-specific file existence check
             filePath.isNotEmpty()
         } catch (ex: Exception) {
             logger.w(ex) { "Error checking file existence: $filePath" }
@@ -137,8 +209,6 @@ class ImageAnalysisService(
 
     private fun getOutputDirectory(): String {
         return try {
-            // Platform-specific output directory
-            // This could be implemented via expect/actual or injected
             "histograms"
         } catch (ex: Exception) {
             logger.w(ex) { "Error getting output directory" }

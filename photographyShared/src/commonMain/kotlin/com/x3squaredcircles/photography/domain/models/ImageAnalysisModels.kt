@@ -9,6 +9,34 @@ data class ImageAnalysisResult(
     val recommendations: List<String> = emptyList()
 )
 
+data class ImageAnalysisData(
+    val redHistogram: DoubleArray,
+    val greenHistogram: DoubleArray,
+    val blueHistogram: DoubleArray,
+    val luminanceHistogram: DoubleArray,
+    val totalPixels: Long
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+        other as ImageAnalysisData
+        return redHistogram.contentEquals(other.redHistogram) &&
+                greenHistogram.contentEquals(other.greenHistogram) &&
+                blueHistogram.contentEquals(other.blueHistogram) &&
+                luminanceHistogram.contentEquals(other.luminanceHistogram) &&
+                totalPixels == other.totalPixels
+    }
+
+    override fun hashCode(): Int {
+        var result = redHistogram.contentHashCode()
+        result = 31 * result + greenHistogram.contentHashCode()
+        result = 31 * result + blueHistogram.contentHashCode()
+        result = 31 * result + luminanceHistogram.contentHashCode()
+        result = 31 * result + totalPixels.hashCode()
+        return result
+    }
+}
+
 data class ColorAnalysis(
     val dominantColors: List<ColorInfo> = emptyList(),
     val colorHarmony: ColorHarmony = ColorHarmony.UNKNOWN,

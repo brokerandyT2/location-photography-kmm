@@ -4,10 +4,10 @@ package com.x3squaredcircles.photography.infrastructure.services
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.models.SceneEvaluationResultDto
 import com.x3squaredcircles.photography.domain.models.SceneEvaluationStatsDto
+import com.x3squaredcircles.photography.domain.models.ImageAnalysisData
 import com.x3squaredcircles.photography.domain.services.ISceneEvaluationService
 import com.x3squaredcircles.photography.domain.services.ICameraService
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
-import com.x3squaredcircles.photography.domain.services.ImageAnalysisData
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
@@ -139,7 +139,13 @@ class SceneEvaluationService(
         fileName: String
     ): String {
         return try {
-            imageAnalysisService.generateHistogramImageAsync(histogram, color, fileName)
+            when (val result = imageAnalysisService.generateHistogramImageAsync(histogram, color, fileName)) {
+                is Result.Success -> result.data
+                is Result.Failure -> {
+                    logger.w { "Failed to generate histogram image for $fileName: ${result.error}" }
+                    ""
+                }
+            }
         } catch (ex: Exception) {
             logger.w(ex) { "Failed to generate histogram image for $fileName" }
             ""
