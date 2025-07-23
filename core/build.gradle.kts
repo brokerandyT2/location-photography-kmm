@@ -15,10 +15,6 @@ kotlin {
             }
         }
     }
-    
-    // JVM target for desktop development
-
-    
     // iOS targets only on macOS
     // Uncomment when building on macOS:
     // iosX64()
@@ -65,9 +61,7 @@ kotlin {
                 implementation("junit:junit:4.13.2")
             }
         }
-        
 
-        
         // iOS sourcesets only on macOS
         // Uncomment when building on macOS:
         // val iosMain by getting {

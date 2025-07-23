@@ -15,11 +15,7 @@ kotlin {
             }
         }
     }
-    
-    // JVM target for desktop development
-
-    
-    // iOS targets only on macOS
+       // iOS targets only on macOS
     // Uncomment when building on macOS:
     // iosX64()
     // iosArm64()
