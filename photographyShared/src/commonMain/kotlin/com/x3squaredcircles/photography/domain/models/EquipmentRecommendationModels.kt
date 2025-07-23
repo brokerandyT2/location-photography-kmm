@@ -5,33 +5,80 @@ import com.x3squaredcircles.photography.application.queries.camerabody.CameraBod
 import com.x3squaredcircles.photography.application.queries.lens.LensDto
 import kotlinx.datetime.Instant
 
-enum class AstroTarget {
-    MOON,
-    PLANETS,
-    MILKY_WAY_CORE,
-    DEEP_SKY_OBJECTS,
-    STAR_TRAILS,
-    METEOR_SHOWERS,
-    SOLAR_ECLIPSE,
-    LUNAR_ECLIPSE,
-    CONJUNCTIONS,
-    DEEP_SKY,
-    MILKY_WAY,
-    MilkyWayCore,
-    Planets,
-    DeepSkyObjects,
-    MeteorShowers,
-    Moon,
-    M31_Andromeda,
-    M42_Orion,
-    M51_Whirlpool,
-    M13_Hercules,
-    M27_Dumbbell,
-    M57_Ring,
-    M81_Bodes,
-    M104_Sombrero
-}
+    enum class AstroTarget {
+        // General Categories
+        Moon,
+        Planets,
+        MilkyWayCore,
+        DeepSkyObjects,
+        StarTrails,
+        Comets,
+        MeteorShowers,
+        PolarAlignment,
+        Constellations,
+        NorthernLights,
 
+        // Individual Planets
+        Mercury,
+        Venus,
+        Mars,
+        Jupiter,
+        Saturn,
+        Uranus,
+        Neptune,
+        Pluto,
+
+        // Specific Meteor Showers
+        Quadrantids,
+        EtaAquariids,
+        Leonids,
+        Geminids,
+        Perseids,
+
+        // Individual Constellations (legacy naming)
+        Leo,
+        Scorpius,
+        Cygnus,
+        BigDipper,
+        Cassiopeia,
+        Orion,
+
+        // Individual Constellations (prefixed naming)
+        Constellation_Sagittarius,
+        Constellation_Orion,
+        Constellation_Cassiopeia,
+        Constellation_UrsaMajor,
+        Constellation_Cygnus,
+        Constellation_Scorpius,
+        Constellation_Leo,
+
+        // Specific Deep Sky Objects - Messier Catalog
+        M31_Andromeda,
+        M42_Orion,
+        M51_Whirlpool,
+        M13_Hercules,
+        M27_Dumbbell,
+        M57_Ring,
+        M81_Bodes,
+        M104_Sombrero,
+
+        // Other Deep Sky Objects (legacy naming)
+        CrabNebula,
+        LagoonNebula,
+        EagleNebula,
+        RingNebula,
+        WhirlpoolGalaxy,
+        Pleiades,
+        OrionNebula,
+        AndromedaGalaxy,
+
+        // Special Targets
+        ISS,
+        DEEP_SKY_OBJECTS,
+        STAR_TRAILS,
+
+
+    }
 data class OptimalEquipmentSpecs(
     val minFocalLength: Double,
     val maxFocalLength: Double,

@@ -153,7 +153,7 @@ class EquipmentRecommendationService(
 
     private fun getOptimalEquipmentSpecs(target: AstroTarget): OptimalEquipmentSpecs {
         return when (target) {
-            AstroTarget.MOON -> OptimalEquipmentSpecs(
+            AstroTarget.Moon -> OptimalEquipmentSpecs(
                 minFocalLength = 200.0,
                 maxFocalLength = 2000.0,
                 optimalFocalLength = 600.0,
@@ -163,7 +163,8 @@ class EquipmentRecommendationService(
                 recommendedSettings = "ISO 100-400, f/8-f/11, 1/60s-1/250s",
                 notes = "Moon photography benefits from longer focal lengths and stopped-down apertures for sharpness."
             )
-            AstroTarget.PLANETS -> OptimalEquipmentSpecs(
+
+            AstroTarget.Planets -> OptimalEquipmentSpecs(
                 minFocalLength = 500.0,
                 maxFocalLength = 3000.0,
                 optimalFocalLength = 1200.0,
@@ -173,7 +174,8 @@ class EquipmentRecommendationService(
                 recommendedSettings = "ISO 800-1600, f/8-f/10, 1/30s-1/125s",
                 notes = "Planetary photography requires very long focal lengths and high magnification."
             )
-            AstroTarget.MILKY_WAY_CORE, AstroTarget.MILKY_WAY -> OptimalEquipmentSpecs(
+
+            AstroTarget.MilkyWayCore -> OptimalEquipmentSpecs(
                 minFocalLength = 14.0,
                 maxFocalLength = 35.0,
                 optimalFocalLength = 24.0,
@@ -183,68 +185,357 @@ class EquipmentRecommendationService(
                 recommendedSettings = "ISO 3200-6400, f/1.4-f/2.8, 15s-25s",
                 notes = "Milky Way photography requires wide angles and fast apertures for light gathering."
             )
-            AstroTarget.DEEP_SKY_OBJECTS, AstroTarget.DEEP_SKY -> OptimalEquipmentSpecs(
+
+            AstroTarget.DeepSkyObjects -> OptimalEquipmentSpecs(
                 minFocalLength = 85.0,
                 maxFocalLength = 600.0,
                 optimalFocalLength = 200.0,
                 maxAperture = 4.0,
                 minIsoCapability = 800,
                 maxIsoCapability = 6400,
-                recommendedSettings = "ISO 1600-3200, f/2.8-f/4, 30s-300s with tracking",
-                notes = "Deep sky objects benefit from moderate telephoto lenses and tracking mounts.",
+                recommendedSettings = "ISO 1600-3200, f/2.8-f/4, 2-5 minutes with tracking",
+                notes = "Deep sky objects benefit from longer focal lengths and tracking mounts for extended exposures.",
                 tracking = true
             )
-            AstroTarget.STAR_TRAILS -> OptimalEquipmentSpecs(
+
+            AstroTarget.StarTrails -> OptimalEquipmentSpecs(
                 minFocalLength = 14.0,
-                maxFocalLength = 50.0,
-                optimalFocalLength = 28.0,
-                maxAperture = 5.6,
-                minIsoCapability = 200,
-                maxIsoCapability = 1600,
-                recommendedSettings = "ISO 400-800, f/4-f/5.6, 15min-4hr total exposure",
-                notes = "Star trails work well with wide to normal lenses and lower ISO for cleaner images."
+                maxFocalLength = 85.0,
+                optimalFocalLength = 35.0,
+                maxAperture = 4.0,
+                minIsoCapability = 100,
+                maxIsoCapability = 800,
+                recommendedSettings = "ISO 200-400, f/4-f/5.6, 30s intervals for 1-4 hours",
+                notes = "Star trails require wide angles for composition and moderate ISO for noise control."
             )
-            AstroTarget.METEOR_SHOWERS -> OptimalEquipmentSpecs(
+
+            AstroTarget.MeteorShowers -> OptimalEquipmentSpecs(
                 minFocalLength = 14.0,
                 maxFocalLength = 35.0,
                 optimalFocalLength = 24.0,
                 maxAperture = 2.8,
                 minIsoCapability = 1600,
                 maxIsoCapability = 6400,
-                recommendedSettings = "ISO 3200-6400, f/2.8-f/4, 15s-30s",
-                notes = "Meteor photography requires wide coverage and fast settings to capture brief events."
+                recommendedSettings = "ISO 3200, f/2.8, 15-30 seconds",
+                notes = "Wide field to capture meteors. Point 45-60° away from radiant for longer trails."
             )
-            AstroTarget.SOLAR_ECLIPSE -> OptimalEquipmentSpecs(
-                minFocalLength = 200.0,
-                maxFocalLength = 1000.0,
-                optimalFocalLength = 400.0,
-                maxAperture = 8.0,
-                minIsoCapability = 100,
+
+            AstroTarget.Comets -> OptimalEquipmentSpecs(
+                minFocalLength = 85.0,
+                maxFocalLength = 300.0,
+                optimalFocalLength = 135.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
                 maxIsoCapability = 3200,
-                recommendedSettings = "ISO 100-1600, f/8-f/11, 1/1000s-2s (requires solar filter)",
-                notes = "Solar eclipse photography requires telephoto lenses and proper solar filtration for safety."
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 60-120 seconds with tracking",
+                notes = "Comets require medium telephoto lenses and tracking for tail details.",
+                tracking = true
             )
-            AstroTarget.LUNAR_ECLIPSE -> OptimalEquipmentSpecs(
+
+            AstroTarget.PolarAlignment -> OptimalEquipmentSpecs(
+                minFocalLength = 85.0,
+                maxFocalLength = 200.0,
+                optimalFocalLength = 135.0,
+                maxAperture = 5.6,
+                minIsoCapability = 400,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 800, f/4-f/5.6, 10-30 seconds",
+                notes = "Polar alignment requires moderate telephoto to see Polaris and surrounding stars clearly."
+            )
+
+            AstroTarget.Constellations -> OptimalEquipmentSpecs(
+                minFocalLength = 24.0,
+                maxFocalLength = 85.0,
+                optimalFocalLength = 50.0,
+                maxAperture = 2.8,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 15-30 seconds",
+                notes = "Constellation photography benefits from standard to short telephoto lenses."
+            )
+
+            AstroTarget.NorthernLights -> OptimalEquipmentSpecs(
+                minFocalLength = 14.0,
+                maxFocalLength = 35.0,
+                optimalFocalLength = 24.0,
+                maxAperture = 2.8,
+                minIsoCapability = 800,
+                maxIsoCapability = 6400,
+                recommendedSettings = "ISO 1600-3200, f/1.4-f/2.8, 3-15 seconds",
+                notes = "Aurora photography requires fast wide-angle lenses and quick exposure times to freeze movement."
+            )
+
+            // Individual Planets
+            AstroTarget.Mercury -> OptimalEquipmentSpecs(
+                minFocalLength = 800.0,
+                maxFocalLength = 3000.0,
+                optimalFocalLength = 1500.0,
+                maxAperture = 10.0,
+                minIsoCapability = 400,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 400-800, f/8-f/10, 1/125s-1/500s",
+                notes = "Mercury requires extreme magnification and is best photographed during twilight."
+            )
+
+            AstroTarget.Venus -> OptimalEquipmentSpecs(
+                minFocalLength = 600.0,
+                maxFocalLength = 2000.0,
+                optimalFocalLength = 1000.0,
+                maxAperture = 8.0,
+                minIsoCapability = 200,
+                maxIsoCapability = 800,
+                recommendedSettings = "ISO 200-400, f/8-f/10, 1/250s-1/500s",
+                notes = "Venus shows phases and requires high magnification. Use UV filters to enhance contrast."
+            )
+
+            AstroTarget.Mars -> OptimalEquipmentSpecs(
+                minFocalLength = 800.0,
+                maxFocalLength = 3000.0,
+                optimalFocalLength = 1500.0,
+                maxAperture = 8.0,
+                minIsoCapability = 400,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 400-800, f/8-f/10, 1/60s-1/250s",
+                notes = "Mars surface features require high magnification and steady seeing conditions."
+            )
+
+            AstroTarget.Jupiter -> OptimalEquipmentSpecs(
+                minFocalLength = 800.0,
+                maxFocalLength = 2500.0,
+                optimalFocalLength = 1200.0,
+                maxAperture = 8.0,
+                minIsoCapability = 400,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 400-800, f/8-f/10, 1/60s-1/125s",
+                notes = "Jupiter and its moons require high magnification. Great Red Spot details need excellent seeing."
+            )
+
+            AstroTarget.Saturn -> OptimalEquipmentSpecs(
+                minFocalLength = 1000.0,
+                maxFocalLength = 3000.0,
+                optimalFocalLength = 1500.0,
+                maxAperture = 8.0,
+                minIsoCapability = 400,
+                maxIsoCapability = 1600,
+                recommendedSettings = "ISO 400-800, f/8-f/10, 1/60s-1/125s",
+                notes = "Saturn's rings require the highest magnification and excellent atmospheric conditions."
+            )
+
+            AstroTarget.Uranus -> OptimalEquipmentSpecs(
+                minFocalLength = 600.0,
+                maxFocalLength = 2000.0,
+                optimalFocalLength = 1000.0,
+                maxAperture = 6.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 800-1600, f/6-f/8, 1/30s-1/60s",
+                notes = "Uranus appears as a small blue-green disk requiring high magnification."
+            )
+
+            AstroTarget.Neptune -> OptimalEquipmentSpecs(
+                minFocalLength = 800.0,
+                maxFocalLength = 2500.0,
+                optimalFocalLength = 1500.0,
+                maxAperture = 6.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 800-1600, f/6-f/8, 1/30s-1/60s",
+                notes = "Neptune is very small and faint, requiring maximum magnification and longer exposures."
+            )
+
+            AstroTarget.Pluto -> OptimalEquipmentSpecs(
+                minFocalLength = 1000.0,
+                maxFocalLength = 3000.0,
+                optimalFocalLength = 2000.0,
+                maxAperture = 4.0,
+                minIsoCapability = 1600,
+                maxIsoCapability = 6400,
+                recommendedSettings = "ISO 3200-6400, f/4-f/6, 60-120 seconds with tracking",
+                notes = "Pluto appears stellar and requires star charts for identification. Long exposures essential.",
+                tracking = true
+            )
+
+            // Meteor Showers (specific)
+            AstroTarget.Quadrantids, AstroTarget.EtaAquariids, AstroTarget.Leonids,
+            AstroTarget.Geminids, AstroTarget.Perseids -> OptimalEquipmentSpecs(
+                minFocalLength = 14.0,
+                maxFocalLength = 35.0,
+                optimalFocalLength = 24.0,
+                maxAperture = 2.8,
+                minIsoCapability = 1600,
+                maxIsoCapability = 6400,
+                recommendedSettings = "ISO 3200, f/2.8, 15-30 seconds",
+                notes = "Specific meteor showers require wide field coverage and fast apertures."
+            )
+
+            // Constellations (specific)
+            AstroTarget.Leo, AstroTarget.Scorpius, AstroTarget.Cygnus, AstroTarget.BigDipper,
+            AstroTarget.Cassiopeia, AstroTarget.Orion, AstroTarget.Constellation_Sagittarius,
+            AstroTarget.Constellation_Orion, AstroTarget.Constellation_Cassiopeia,
+            AstroTarget.Constellation_UrsaMajor, AstroTarget.Constellation_Cygnus,
+            AstroTarget.Constellation_Scorpius, AstroTarget.Constellation_Leo -> OptimalEquipmentSpecs(
+                minFocalLength = 24.0,
+                maxFocalLength = 85.0,
+                optimalFocalLength = 50.0,
+                maxAperture = 2.8,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 15-30 seconds",
+                notes = "Individual constellations benefit from standard lenses to frame the star pattern."
+            )
+
+            // Deep Sky Objects (specific)
+            AstroTarget.M31_Andromeda -> OptimalEquipmentSpecs(
+                minFocalLength = 85.0,
+                maxFocalLength = 300.0,
+                optimalFocalLength = 135.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 2-5 minutes with tracking",
+                notes = "M31 Andromeda Galaxy requires medium telephoto and tracking for spiral arm details.",
+                tracking = true
+            )
+
+            AstroTarget.M42_Orion -> OptimalEquipmentSpecs(
+                minFocalLength = 135.0,
+                maxFocalLength = 600.0,
+                optimalFocalLength = 200.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 2-3 minutes with tracking",
+                notes = "M42 Orion Nebula shows excellent detail with telephoto lenses and tracking.",
+                tracking = true
+            )
+
+            AstroTarget.M51_Whirlpool -> OptimalEquipmentSpecs(
                 minFocalLength = 200.0,
                 maxFocalLength = 800.0,
                 optimalFocalLength = 400.0,
-                maxAperture = 5.6,
-                minIsoCapability = 400,
-                maxIsoCapability = 6400,
-                recommendedSettings = "ISO 800-3200, f/4-f/8, 1s-15s",
-                notes = "Lunar eclipses require moderate telephoto lenses and adaptable settings for changing light."
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 3-5 minutes with tracking",
+                notes = "M51 Whirlpool Galaxy requires long focal lengths to show spiral structure.",
+                tracking = true
             )
-            AstroTarget.CONJUNCTIONS -> OptimalEquipmentSpecs(
-                minFocalLength = 85.0,
+
+            AstroTarget.M13_Hercules -> OptimalEquipmentSpecs(
+                minFocalLength = 200.0,
+                maxFocalLength = 600.0,
+                optimalFocalLength = 300.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 2-4 minutes with tracking",
+                notes = "M13 Hercules Cluster benefits from telephoto lenses to resolve individual stars.",
+                tracking = true
+            )
+
+            AstroTarget.M27_Dumbbell -> OptimalEquipmentSpecs(
+                minFocalLength = 200.0,
+                maxFocalLength = 600.0,
+                optimalFocalLength = 300.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 3-5 minutes with tracking",
+                notes = "M27 Dumbbell Nebula shows excellent color with medium telephoto lenses.",
+                tracking = true
+            )
+
+            AstroTarget.M57_Ring -> OptimalEquipmentSpecs(
+                minFocalLength = 300.0,
+                maxFocalLength = 1000.0,
+                optimalFocalLength = 600.0,
+                maxAperture = 5.6,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/4-f/5.6, 3-5 minutes with tracking",
+                notes = "M57 Ring Nebula is small and requires long focal lengths for detailed structure.",
+                tracking = true
+            )
+
+            AstroTarget.M81_Bodes -> OptimalEquipmentSpecs(
+                minFocalLength = 200.0,
+                maxFocalLength = 600.0,
+                optimalFocalLength = 300.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 3-5 minutes with tracking",
+                notes = "M81 Bode's Galaxy pairs well with M82 in the same field of view.",
+                tracking = true
+            )
+
+            AstroTarget.M104_Sombrero -> OptimalEquipmentSpecs(
+                minFocalLength = 300.0,
+                maxFocalLength = 800.0,
+                optimalFocalLength = 500.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 4-6 minutes with tracking",
+                notes = "M104 Sombrero Galaxy requires long focal lengths to show the distinctive dust lane.",
+                tracking = true
+            )
+
+            // Nebulae (specific)
+            AstroTarget.CrabNebula, AstroTarget.LagoonNebula, AstroTarget.EagleNebula,
+            AstroTarget.RingNebula -> OptimalEquipmentSpecs(
+                minFocalLength = 200.0,
+                maxFocalLength = 800.0,
+                optimalFocalLength = 400.0,
+                maxAperture = 4.0,
+                minIsoCapability = 800,
+                maxIsoCapability = 3200,
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 3-5 minutes with tracking",
+                notes = "Nebulae require telephoto lenses and tracking for detailed structure and color.",
+                tracking = true
+            )
+
+            // Star Clusters and Galaxies
+            AstroTarget.WhirlpoolGalaxy, AstroTarget.Pleiades, AstroTarget.OrionNebula,
+            AstroTarget.AndromedaGalaxy -> OptimalEquipmentSpecs(
+                minFocalLength = 135.0,
                 maxFocalLength = 400.0,
                 optimalFocalLength = 200.0,
                 maxAperture = 4.0,
                 minIsoCapability = 800,
                 maxIsoCapability = 3200,
-                recommendedSettings = "ISO 1600-3200, f/2.8-f/5.6, 1s-30s",
-                notes = "Planetary conjunctions benefit from moderate telephoto lenses to show both objects clearly."
+                recommendedSettings = "ISO 1600, f/2.8-f/4, 2-5 minutes with tracking",
+                notes = "Large deep sky objects benefit from medium telephoto lenses and tracking.",
+                tracking = true
             )
+
+            // Special Targets
+            AstroTarget.ISS -> OptimalEquipmentSpecs(
+                minFocalLength = 14.0,
+                maxFocalLength = 85.0,
+                optimalFocalLength = 35.0,
+                maxAperture = 2.8,
+                minIsoCapability = 800,
+                maxIsoCapability = 6400,
+                recommendedSettings = "ISO 1600-3200, f/2.8-f/4, 1-5 seconds",
+                notes = "ISS photography requires wide to standard lenses and precise timing for passes."
+            )
+            else -> {
+                logger.w { "Using default equipment specs for unhandled target: $target" }
+                OptimalEquipmentSpecs(
+                    minFocalLength = 50.0,
+                    maxFocalLength = 200.0,
+                    optimalFocalLength = 85.0,
+                    maxAperture = 4.0,
+                    minIsoCapability = 800,
+                    maxIsoCapability = 3200,
+                    recommendedSettings = "ISO 1600, f/2.8-f/4, 30 seconds",
+                    notes = "Default astrophotography settings. Specific recommendations not yet implemented for this target."
+                )
+            }
+
         }
+
     }
 
     private fun isLensCompatibleWithTarget(lens: LensDto, specs: OptimalEquipmentSpecs): Boolean {

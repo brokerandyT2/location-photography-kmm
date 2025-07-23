@@ -10,6 +10,7 @@ import com.x3squaredcircles.photography.domain.services.ICameraService
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
+import com.x3squaredcircles.photography.domain.models.ImageAnalysisResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -83,36 +84,36 @@ class SceneEvaluationService(
                     return Result.failure("Failed to analyze image: ${imageAnalysisResult.error}")
                 }
                 is Result.Success -> {
-                    val analysisData = imageAnalysisResult.data
+                    val analysisResult  = imageAnalysisResult.data
 
                     val timestamp = Clock.System.now().toEpochMilliseconds()
                     val baseFileName = "histogram_${timestamp}"
 
                     val redHistogramPath = generateHistogramImage(
-                        analysisData.redHistogram,
+                        analysisResult.redHistogram.values,
                         HistogramColor.RED,
                         "${baseFileName}_red"
                     )
 
                     val greenHistogramPath = generateHistogramImage(
-                        analysisData.greenHistogram,
+                        analysisResult.greenHistogram.values,
                         HistogramColor.GREEN,
                         "${baseFileName}_green"
                     )
 
                     val blueHistogramPath = generateHistogramImage(
-                        analysisData.blueHistogram,
+                        analysisResult.blueHistogram.values,
                         HistogramColor.BLUE,
                         "${baseFileName}_blue"
                     )
 
                     val contrastHistogramPath = generateHistogramImage(
-                        analysisData.luminanceHistogram,
+                        analysisResult.luminanceHistogram.values,
                         HistogramColor.LUMINANCE,
                         "${baseFileName}_contrast"
                     )
 
-                    val stats = calculateStatistics(analysisData)
+                    val stats = calculateStatistics(analysisResult)
 
                     val result = SceneEvaluationResultDto(
                         redHistogramPath = redHistogramPath,
@@ -152,17 +153,17 @@ class SceneEvaluationService(
         }
     }
 
-    private fun calculateStatistics(analysisData: ImageAnalysisData): SceneEvaluationStatsDto {
+    private fun calculateStatistics(analysisResult: ImageAnalysisResult): SceneEvaluationStatsDto {
         return SceneEvaluationStatsDto(
-            meanRed = analysisData.redHistogram.calculateMean(),
-            meanGreen = analysisData.greenHistogram.calculateMean(),
-            meanBlue = analysisData.blueHistogram.calculateMean(),
-            meanContrast = analysisData.luminanceHistogram.calculateMean(),
-            stdDevRed = analysisData.redHistogram.calculateStandardDeviation(),
-            stdDevGreen = analysisData.greenHistogram.calculateStandardDeviation(),
-            stdDevBlue = analysisData.blueHistogram.calculateStandardDeviation(),
-            stdDevContrast = analysisData.luminanceHistogram.calculateStandardDeviation(),
-            totalPixels = analysisData.totalPixels
+            meanRed = analysisResult.redHistogram.values.calculateMean(),
+            meanGreen = analysisResult.greenHistogram.values.calculateMean(),
+            meanBlue = analysisResult.blueHistogram.values.calculateMean(),
+            meanContrast = analysisResult.luminanceHistogram.values.calculateMean(),
+            stdDevRed = analysisResult.redHistogram.values.calculateStandardDeviation(),
+            stdDevGreen = analysisResult.greenHistogram.values.calculateStandardDeviation(),
+            stdDevBlue = analysisResult.blueHistogram.values.calculateStandardDeviation(),
+            stdDevContrast = analysisResult.luminanceHistogram.values.calculateStandardDeviation(),
+            totalPixels = analysisResult.totalPixels
         )
     }
 

@@ -1,13 +1,43 @@
 // photographyShared/src/commonMain/kotlin/com/x3squaredcircles/photography/domain/models/ImageAnalysisModels.kt
 package com.x3squaredcircles.photography.domain.models
 
+import com.x3squaredcircles.photography.domain.services.ColorTemperatureData
+import com.x3squaredcircles.photography.domain.services.ContrastMetrics
+import com.x3squaredcircles.photography.domain.services.ExposureAnalysis
+import com.x3squaredcircles.photography.domain.services.HistogramStatistics
+
 data class ImageAnalysisResult(
-    val colorAnalysis: ColorAnalysis,
-    val compositionAnalysis: CompositionAnalysis,
-    val detectedObjects: List<String> = emptyList(),
-    val qualityScore: Double = 0.0,
-    val recommendations: List<String> = emptyList()
+    val redHistogram: HistogramData,
+    val greenHistogram: HistogramData,
+    val blueHistogram: HistogramData,
+    val luminanceHistogram: HistogramData,
+    val whiteBalance: ColorTemperatureData,
+    val contrast: ContrastMetrics,
+    val exposure: ExposureAnalysis,
+    val totalPixels: Long
 )
+
+data class HistogramData(
+    val values: DoubleArray = DoubleArray(256),
+    val statistics: HistogramStatistics,
+    val imagePath: String = ""
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+        other as HistogramData
+        return values.contentEquals(other.values) &&
+                statistics == other.statistics &&
+                imagePath == other.imagePath
+    }
+
+    override fun hashCode(): Int {
+        var result = values.contentHashCode()
+        result = 31 * result + statistics.hashCode()
+        result = 31 * result + imagePath.hashCode()
+        return result
+    }
+}
 
 data class ImageAnalysisData(
     val redHistogram: DoubleArray,

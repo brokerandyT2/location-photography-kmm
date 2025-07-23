@@ -4,14 +4,15 @@ package com.x3squaredcircles.photography.infrastructure.services
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService
 
-import com.x3squaredcircles.photography.domain.services.HistogramData
-import com.x3squaredcircles.photography.domain.services.HistogramStatistics
-import com.x3squaredcircles.photography.domain.services.ColorTemperatureData
-import com.x3squaredcircles.photography.domain.services.ContrastMetrics
-import com.x3squaredcircles.photography.domain.services.ExposureAnalysis
+import com.x3squaredcircles.photography.domain.models.HistogramData
+
 import com.x3squaredcircles.photography.domain.services.HistogramColor
 import co.touchlab.kermit.Logger
 import com.x3squaredcircles.photography.domain.models.ImageAnalysisResult
+import com.x3squaredcircles.photography.domain.services.ColorTemperatureData
+import com.x3squaredcircles.photography.domain.services.ContrastMetrics
+import com.x3squaredcircles.photography.domain.services.ExposureAnalysis
+import com.x3squaredcircles.photography.domain.services.HistogramStatistics
 
 
 import kotlinx.coroutines.Dispatchers
@@ -132,7 +133,8 @@ class ImageAnalysisService(
             redHistogram = HistogramData(
                 values = analysisData.redHistogram,
                 statistics = calculateHistogramStatistics(analysisData.redHistogram),
-                imagePath = imagePath
+                imagePath = imagePath,
+
             ),
             greenHistogram = HistogramData(
                 values = analysisData.greenHistogram,
@@ -151,7 +153,8 @@ class ImageAnalysisService(
             ),
             whiteBalance = ColorTemperatureData(),
             contrast = ContrastMetrics(),
-            exposure = ExposureAnalysis()
+            exposure = ExposureAnalysis(),
+            totalPixels = analysisData.totalPixels
         )
     }
 
