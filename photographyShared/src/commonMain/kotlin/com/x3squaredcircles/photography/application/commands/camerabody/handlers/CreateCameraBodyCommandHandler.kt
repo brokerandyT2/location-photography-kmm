@@ -9,7 +9,6 @@ import com.x3squaredcircles.photography.infrastructure.repositories.interfaces.I
 import com.x3squaredcircles.photography.domain.entities.CameraBody
 import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
-import kotlinx.datetime.Clock
 
 class CreateCameraBodyCommandHandler(
     private val cameraBodyRepository: ICameraBodyRepository,

@@ -9,7 +9,6 @@ import com.x3squaredcircles.photography.domain.services.ImageFormat
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 
 expect class PlatformCameraManager {
     suspend fun isCameraAvailable(): Boolean

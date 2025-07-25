@@ -3,7 +3,6 @@ package com.x3squaredcircles.photography.infrastructure.repositories.interfaces
 
 import com.x3squaredcircles.core.domain.entities.Weather
 import com.x3squaredcircles.core.domain.entities.WeatherForecast
-import com.x3squaredcircles.core.domain.entities.HourlyForecast
 import com.x3squaredcircles.core.domain.valueobjects.Coordinate
 import com.x3squaredcircles.core.domain.common.Result
 import kotlinx.datetime.Instant

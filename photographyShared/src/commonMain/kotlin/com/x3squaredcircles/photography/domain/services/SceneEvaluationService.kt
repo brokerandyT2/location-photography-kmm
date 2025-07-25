@@ -4,7 +4,6 @@ package com.x3squaredcircles.photography.infrastructure.services
 import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.photography.domain.models.SceneEvaluationResultDto
 import com.x3squaredcircles.photography.domain.models.SceneEvaluationStatsDto
-import com.x3squaredcircles.photography.domain.models.ImageAnalysisData
 import com.x3squaredcircles.photography.domain.services.ISceneEvaluationService
 import com.x3squaredcircles.photography.domain.services.ICameraService
 import com.x3squaredcircles.photography.domain.services.IImageAnalysisService

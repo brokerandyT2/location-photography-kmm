@@ -2,22 +2,20 @@
 package com.x3squaredcircles.photography.infrastructure.datapopulation
 
 import co.touchlab.kermit.Logger
+import com.x3squaredcircles.core.domain.common.Result
 import com.x3squaredcircles.core.domain.entities.Setting
 import com.x3squaredcircles.core.domain.entities.TipType
-import com.x3squaredcircles.core.domain.entities.Tip
 import com.x3squaredcircles.core.domain.entities.Location
 import com.x3squaredcircles.core.domain.valueobjects.Coordinate
 import com.x3squaredcircles.core.domain.valueobjects.Address
 import com.x3squaredcircles.photography.application.common.interfaces.IUnitOfWork
 import com.x3squaredcircles.photography.application.queries.camerabody.CameraBodyDto
 import com.x3squaredcircles.photography.application.services.IAlertService
-import com.x3squaredcircles.photography.domain.entities.CameraBody
 import com.x3squaredcircles.photography.domain.enums.MountType
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.serialization.json.Json
 
 class DatabaseInitializer(
     private val unitOfWork: IUnitOfWork,
@@ -45,20 +43,20 @@ class DatabaseInitializer(
 
             val markerResult = unitOfWork.settings.getByKeyAsync("DatabaseInitialized")
             when (markerResult) {
-                is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                is Result.Success -> {
                     if (markerResult.data != null) {
                         isInitialized = true
                         logger.d("Database initialization marker found")
                         return true
                     }
                 }
-                is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                is Result.Failure -> {
                     logger.e { "Error checking initialization marker: ${markerResult.error}" }
                 }
             }
 
             when (val locationsCountResult = unitOfWork.locations.getTotalCountAsync()) {
-                is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                is Result.Success -> {
                     val hasData = locationsCountResult.data > 0
 
                     if (hasData) {
@@ -68,7 +66,7 @@ class DatabaseInitializer(
                         return true
                     }
                 }
-                is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                is Result.Failure -> {
                     logger.e { "Error checking locations count: ${locationsCountResult.error}" }
                 }
             }
@@ -138,10 +136,10 @@ class DatabaseInitializer(
 
             val result = unitOfWork.settings.createAsync(marker)
             when (result) {
-                is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                is Result.Success -> {
                     logger.d("Database initialization marker created successfully")
                 }
-                is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                is Result.Failure -> {
                     logger.w { "Failed to create initialization marker: ${result.error}" }
                 }
             }
@@ -175,10 +173,10 @@ class DatabaseInitializer(
             for (setting in userSettings) {
                 val result = unitOfWork.settings.createAsync(setting)
                 when (result) {
-                    is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                    is Result.Success -> {
                         logger.d { "Created user setting: ${setting.key}" }
                     }
-                    is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                    is Result.Failure -> {
                         logger.w { "Failed to create user setting ${setting.key}: ${result.error}" }
                     }
                 }
@@ -225,10 +223,10 @@ class DatabaseInitializer(
                 val tipType = TipType.create(tipTypeName)
                 val result = unitOfWork.tipTypes.createAsync(tipType)
                 when (result) {
-                    is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                    is Result.Success -> {
                         logger.d { "Created tip type: $tipTypeName" }
                     }
-                    is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                    is Result.Failure -> {
                         logger.w { "Failed to create tip type $tipTypeName: ${result.error}" }
                     }
                 }
@@ -280,10 +278,10 @@ class DatabaseInitializer(
 
                 val result = unitOfWork.locations.createAsync(location)
                 when (result) {
-                    is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                    is Result.Success -> {
                         logger.d { "Created location: ${locationData.title}" }
                     }
-                    is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                    is Result.Failure -> {
                         logger.w { "Failed to create location ${locationData.title}: ${result.error}" }
                     }
                 }
@@ -342,10 +340,10 @@ class DatabaseInitializer(
                 for (setting in batch) {
                     val result = unitOfWork.settings.createAsync(setting)
                     when (result) {
-                        is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                        is Result.Success -> {
                             logger.d { "Created base setting: ${setting.key}" }
                         }
-                        is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                        is Result.Failure -> {
                             logger.w { "Failed to create base setting ${setting.key}: ${result.error}" }
                         }
                     }
@@ -395,10 +393,10 @@ class DatabaseInitializer(
 
                 val result = unitOfWork.cameraBodies.createAsync(cameraBodyDto)
                 when (result) {
-                    is com.x3squaredcircles.core.domain.common.Result.Success -> {
+                    is Result.Success -> {
                         logger.d { "Created camera profile: ${cameraData.name}" }
                     }
-                    is com.x3squaredcircles.core.domain.common.Result.Failure -> {
+                    is Result.Failure -> {
                         logger.w { "Failed to create camera profile ${cameraData.name}: ${result.error}" }
                     }
                 }

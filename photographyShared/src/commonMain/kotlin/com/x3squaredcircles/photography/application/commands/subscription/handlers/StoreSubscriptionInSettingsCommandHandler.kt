@@ -8,7 +8,6 @@ import com.x3squaredcircles.photography.application.common.interfaces.IUnitOfWor
 import com.x3squaredcircles.photography.application.common.constants.SubscriptionConstants
 import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
-import kotlinx.datetime.Instant
 
 class StoreSubscriptionInSettingsCommandHandler(
     private val unitOfWork: IUnitOfWork,

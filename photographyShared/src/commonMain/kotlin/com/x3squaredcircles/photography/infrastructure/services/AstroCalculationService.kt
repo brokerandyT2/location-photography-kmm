@@ -17,7 +17,6 @@ import com.x3squaredcircles.photography.domain.services.IAstroCalculationService
 import com.x3squaredcircles.photography.domain.services.ISunCalculatorService
 import co.touchlab.kermit.Logger
 import io.github.cosinekitty.astronomy.*
-import io.github.cosinekitty.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant

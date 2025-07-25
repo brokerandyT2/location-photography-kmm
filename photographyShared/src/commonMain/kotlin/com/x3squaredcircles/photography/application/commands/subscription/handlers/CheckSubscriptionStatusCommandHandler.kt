@@ -9,7 +9,6 @@ import com.x3squaredcircles.photography.domain.models.SubscriptionStatusDto
 import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.days
 
 class CheckSubscriptionStatusCommandHandler(

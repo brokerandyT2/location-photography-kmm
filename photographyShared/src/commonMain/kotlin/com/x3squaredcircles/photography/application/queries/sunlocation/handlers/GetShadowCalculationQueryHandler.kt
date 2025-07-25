@@ -9,9 +9,7 @@ import com.x3squaredcircles.photography.application.queries.IQueryHandler
 import com.x3squaredcircles.photography.domain.services.ISunCalculatorService
 import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
 import kotlin.time.Duration.Companion.hours
 import kotlin.math.PI
 import kotlin.math.tan

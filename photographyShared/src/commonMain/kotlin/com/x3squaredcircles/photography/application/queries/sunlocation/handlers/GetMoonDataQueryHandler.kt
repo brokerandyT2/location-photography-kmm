@@ -9,7 +9,6 @@ import com.x3squaredcircles.core.domain.common.Result
 import co.touchlab.kermit.Logger
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
 
 class GetMoonDataQueryHandler(

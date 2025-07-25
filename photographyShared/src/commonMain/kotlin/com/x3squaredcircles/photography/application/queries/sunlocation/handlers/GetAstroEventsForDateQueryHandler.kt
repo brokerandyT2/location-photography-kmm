@@ -11,7 +11,6 @@ import com.x3squaredcircles.photography.application.queries.astrolocation.AstroE
 import com.x3squaredcircles.photography.application.queries.astrolocation.GetAstroEventsForDateQuery
 import com.x3squaredcircles.photography.application.queries.astrolocation.GetAstroEventsForDateQueryResult
 import kotlinx.datetime.Instant
-import kotlinx.datetime.plus
 import kotlin.time.Duration.Companion.hours
 
 class GetAstroEventsForDateQueryHandler(

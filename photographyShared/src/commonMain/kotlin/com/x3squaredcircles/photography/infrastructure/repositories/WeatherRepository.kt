@@ -16,7 +16,6 @@ import com.x3squaredcircles.photographyshared.db.DailyForecast
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 class WeatherRepository(
